@@ -311,9 +311,13 @@ export function monter(banc) {
       { points: e.avant, couleur: COULEURS.bleu, epaisseur: 2.2, marqueurs: true, libelle: "avant l'essai (fraction 10/20 mm)" },
       ...(faits.length ? [{ points: faits, couleur: COULEURS.effort, epaisseur: 2.2, marqueurs: true, libelle: `après ${e.essai === "frag" ? "100 coups de dame" : "4 cycles eau / étuve"}` }] : []),
     ];
-    const marques = [{ x: e.D10avant, y: 10, couleur: COULEURS.bleu, guides: true, libelle: `D10 avant = ${fd(e.D10avant, 1)} mm` }];
     const D10ap = faits.length && faits[0][1] <= 10 ? diametre(e.apres, 10) : NaN;
-    if (Number.isFinite(D10ap)) marques.push({ x: D10ap, y: 10, couleur: COULEURS.effort, guides: true, libelle: `D10 après = ${fd(D10ap, D10ap < 1 ? 2 : 1)} mm` });
+    const avant = fd(e.D10avant, 1), apres = Number.isFinite(D10ap) ? fd(D10ap, D10ap < 1 ? 2 : 1) : "";
+    // Roche dure : les deux D10 sont trop proches (moins d'un facteur 2) pour
+    // deux étiquettes côte à côte ; une seule dit le passage de l'un à l'autre.
+    const proches = Number.isFinite(D10ap) && Math.abs(Math.log10(e.D10avant / D10ap)) < Math.log10(2);
+    const marques = [{ x: e.D10avant, y: 10, couleur: COULEURS.bleu, guides: true, libelle: proches ? "" : `D10 avant = ${avant} mm` }];
+    if (Number.isFinite(D10ap)) marques.push({ x: D10ap, y: 10, couleur: COULEURS.effort, guides: true, libelle: proches ? `D10 : ${avant} → ${apres} mm` : `D10 après = ${apres} mm` });
     zone.innerHTML = graphe({ largeur: 560, hauteur: 260, xmin: 0.05, xmax: 40, logX: true, ymin: 0, ymax: 100, pasY: 20, xlabel: "ouverture des tamis (mm, échelle logarithmique)", ylabel: "passant (%)", series, marques });
   }
 
