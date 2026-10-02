@@ -57,6 +57,11 @@ Les guides et les normes sont protégés. Le site est public.
   rendus de pages, captures) vont dans `docs/travail/`.
 - Avant chaque commit, `git status` ne doit rien montrer de `docs/`, et aucun
   PDF ni aucune image de page du guide ne doit être indexé.
+- **Aucun téléchargement de médias depuis le site** (décision de l'auteur, pour
+  les droits) : ni bouton, ni lien, ni fichier vidéo ou image publié. Les
+  vidéos des bancs et les images des schémas servent aux diaporamas de
+  l'auteur ; elles se produisent dans `docs/medias/` (voir plus bas) et lui
+  sont remises directement.
 
 ## Règles de fond
 
@@ -95,7 +100,7 @@ Les guides et les normes sont protégés. Le site est public.
 ```text
 npm test                                   # 130 contrôles : ils doivent rester verts
 node tools/generer-exercices.mjs [chN…]    # banques data/exercices-chN.json
-python tools/generer-sw.py georoute-v3     # coquille du service worker (sw.js)
+python tools/generer-sw.py georoute-v4     # coquille du service worker (sw.js)
 python tools/polycopie.py                  # polycopié PDF à partir de cours.html
 npx serve .                                # le site en local (ou python -m http.server)
 ```
@@ -106,8 +111,8 @@ npx serve .                                # le site en local (ou python -m http
   de modèles.
 - **Service worker** : à régénérer dès qu'un module ou un fichier de données
   apparaît ou disparaît (le test `pages` contrôle la coquille). À chaque
-  publication, changer la version (`georoute-v2` aujourd'hui, puis
-  `georoute-v3`…) **et** la constante `VERSION_ATTENDUE` de `src/socle.js`,
+  publication, changer la version (`georoute-v3` aujourd'hui, puis
+  `georoute-v4`…) **et** la constante `VERSION_ATTENDUE` de `src/socle.js`,
   avec la même valeur.
 - **Polycopié** : à régénérer après toute retouche de `cours.html`. Il faut
   PyMuPDF et Chrome, Edge ou Chromium (`NAVIGATEUR=/chemin/vers/chrome` en
@@ -133,6 +138,29 @@ Chaque script sert la racine du dépôt sur un port libre.
 Les signalements de `schemas.mjs` sur les tracés sont approchés. Un libellé
 peut être posé exprès sur un trait, avec un halo. Il faut **regarder les
 images**. Les captures vont dans `docs/travail/`.
+
+### Médias pour les diaporamas de l'auteur (hors site)
+
+```text
+node tools/videos-bancs.mjs --varier essai   # une vidéo MP4 par banc et par matériau → docs/medias/bancs/<banc>/
+node tools/videos-bancs.mjs bleu --apercu    # trois images (début, milieu, fin) pour juger la mise en page
+node tools/images-schemas.mjs                # les 26 schémas en SVG et PNG, avec legendes.txt → docs/medias/schemas/
+```
+
+- Les vidéos sont en 1920 × 1080, H.264, lisibles par PowerPoint. Chaque banc
+  est ouvert seul, en mise en page 16:9 : scène, afficheurs et loupe, courbes,
+  bilan. Il est filmé image par image sous une horloge maîtrisée (`page.clock`
+  de Playwright), ce qui donne une animation régulière. Il faut ffmpeg.
+- Une vidéo par matériau : le premier réglage `sol`, `roche`, `mat` ou `pf`
+  du banc prend toutes ses valeurs. `--varier essai` fait aussi les deux essais
+  du banc de fragmentabilité et de dégradabilité. `--un-seul` s'en tient au
+  matériau par défaut.
+- La vitesse est choisie pour une vidéo de 12 à 75 s. Un essai à blanc repère
+  ce qui déborderait du cadre et le resserre dès le début : tableaux retirés,
+  graphiques moins hauts, afficheurs plus compacts. « DÉBORDE ENCORE » dans le
+  journal signale une mise en page à reprendre.
+- Après une retouche d'un banc ou d'un schéma, refaire les médias concernés et
+  les remettre à l'auteur. Ne jamais les indexer.
 
 ## Avant de pousser
 

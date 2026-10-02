@@ -134,8 +134,13 @@ captures) demandent Playwright, qui n'est pas une dépendance du site :
 `npm i --no-save playwright && npx playwright install chromium`. Le fichier
 `CLAUDE.md` décrit leur usage et la façon de travailler sur le dépôt.
 
+`tools/videos-bancs.mjs` (vidéos MP4 des bancs d'essai, une par matériau) et
+`tools/images-schemas.mjs` (schémas en SVG et PNG) produisent les médias des
+diaporamas de l'auteur dans `docs/medias/`, hors dépôt : le site ne propose
+aucun téléchargement.
+
 Après toute modification publiée, changer la version du service worker
-(`python tools/generer-sw.py georoute-v3`, par exemple) et la constante
+(`python tools/generer-sw.py georoute-v4`, par exemple) et la constante
 `VERSION_ATTENDUE` de `src/socle.js`, pour que les lecteurs déjà venus reçoivent
 la nouvelle version. Le polycopié se régénère après toute retouche du cours
 (`NAVIGATEUR=/chemin/vers/chrome` désigne un navigateur particulier).
