@@ -3,19 +3,24 @@
 // modules à la plaque et à la dynaplaque, seuils de portance du chantier.
 import { el, num, f, fd, esc, verdict, brancher, garde, lireTableau } from "./ui.js";
 import { graphe, COULEURS } from "./figures.js";
-import { OBJECTIFS, densiteTranche, tranchesDensite } from "./gtr/compactage.js";
+import { OBJECTIFS, densiteTranche, tranchesDensite, jugerQSreel } from "./gtr/compactage.js";
 import { plaque, jugerK, dynaplaque, classeArase, classePlateforme } from "./gtr/portance.js";
 
 // ── Q/S réalisé ───────────────────────────────────────────────────────────
 const majQSreel = garde("qrOut", () => {
-  const Q = num("qrQ"), d = num("qrD"), L = num("qrL"), tab = num("qrTab");
+  const Q = num("qrQ"), d = num("qrD"), L = num("qrL"), tab = num("qrTab"), code = el("qrCode").value;
   if (!(Q > 0 && d > 0 && L > 0 && tab > 0)) { el("qrOut").textContent = "Renseigner Q, la distance, la largeur et le Q/S du tableau."; return; }
-  const S = 1000 * d * L, QS = Q / S, ok = QS <= tab + 1e-9;
-  const manque = Q / tab / 1000 / L - d;
-  el("qrOut").innerHTML = `S = 1 000 × ${fd(d, 1)} × ${fd(L, 2)} = ${f(S, 4)} m² · Q/S réalisé = ${f(Q, 4)}/${f(S, 4)} = <strong>${fd(QS, 3)} m</strong> ${verdict(ok, `≤ ${fd(tab, 3)} m`, `> ${fd(tab, 3)} m`)}
-    <small>${ok ? `Le compacteur a appliqué au moins l'énergie prescrite (${fd(QS / tab * 100, 0)} % du Q/S admis).` : `Énergie insuffisante : il aurait fallu ${fd(manque, 1)} km de compactage de plus, ou ${f(tab * S, 4)} m³ au plus.`}</small>`;
+  const S = 1000 * d * L, QS = Q / S, j = jugerQSreel({ QSreel: QS, QStableau: tab, code });
+  const faible = code === "3", dCible = Q / tab / 1000 / L;
+  const texte = j.sens === "ok"
+    ? (faible ? `Énergie faible : le Q/S réalisé s'écarte de ${fd(Math.abs(j.rapport - 1) * 100, 0)} % de celui du tableau, dans la tolérance de ± 20 %.` : `Le compacteur a appliqué au moins l'énergie prescrite (${fd(j.rapport * 100, 0)} % du Q/S admis) ; un Q/S bien plus faible ne gêne pas en énergie intense ou moyenne.`)
+    : j.sens === "insuffisant"
+      ? `Énergie insuffisante : il aurait fallu ${fd((faible ? dCible / 1.2 : dCible) - d, 1)} km de compactage de plus, ou ${f((faible ? 1.2 : 1) * tab * S, 4)} m³ au plus.`
+      : `Trop d'énergie pour une énergie faible : sur un sol humide, compacter davantage le matelasse et fait chuter sa portance. Au plus ${fd(dCible / 0.8, 1)} km de compactage pour ce volume.`;
+  el("qrOut").innerHTML = `S = 1 000 × ${fd(d, 1)} × ${fd(L, 2)} = ${f(S, 4)} m² · Q/S réalisé = ${f(Q, 4)}/${f(S, 4)} = <strong>${fd(QS, 3)} m</strong> ${verdict(j.ok, faible ? `dans ± 20 % de ${fd(tab, 3)} m` : `≤ ${fd(tab, 3)} m`, faible ? `hors de ± 20 % de ${fd(tab, 3)} m` : `> ${fd(tab, 3)} m`)}
+    <small>${texte}</small>`;
 });
-brancher(["qrQ", "qrD", "qrL", "qrTab"], majQSreel);
+brancher(["qrQ", "qrD", "qrL", "qrTab", "qrCode"], majQSreel);
 
 // ── Densité en place ──────────────────────────────────────────────────────
 const majDensite = garde("deOut", () => {

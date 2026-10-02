@@ -246,15 +246,50 @@ test("matériaux traités : zones de l'abaque et classes mécaniques", async () 
   for (const E of [1000, 3000, 10000, 30000, 50000]) for (let k = 1; k < 5; k++) assert.ok(rtFrontiere(FRONTIERES_ZONES[k - 1], E) > rtFrontiere(FRONTIERES_ZONES[k], E));
 });
 
-test("couche de forme : Lmax et épaisseurs du GTR 2000", async () => {
-  const { lmaxCoucheForme, epaisseur2000 } = await import("../src/gtr/couche-forme.js");
+test("couche de forme : Lmax et épaisseurs du GTR 2024 (F1 tableaux 20 à 23)", async () => {
+  const { lmaxCoucheForme, epaisseurCoucheForme: ep, plateformeObtenue } = await import("../src/gtr/couche-forme.js");
   assert.equal(lmaxCoucheForme(0.3), 150);
   assert.equal(lmaxCoucheForme(0.45), 225);
   assert.equal(lmaxCoucheForme(0.6), 250, "tableau 13 : plafonné à 250 mm");
-  assert.equal(epaisseur2000({ type: "nonTraite", ar: "AR1", pf: "PF3" }).e, 0.8);
-  assert.equal(epaisseur2000({ type: "grenuTraite", ar: "AR2", classe: 4, pf: "PF4" }).e, 0.35);
-  assert.equal(epaisseur2000({ type: "grenuTraite", ar: "AR1", classe: 3, pf: "PF2" }).e, 0.3);
-  assert.equal(epaisseur2000({ type: "finChaux", ar: "AR3", pf: "PF3" }).applicable, false);
+  // Tableau 20 : règles sécuritaires (matériaux non connus).
+  const p1 = ep({ type: "securitaire", pst: "PST1", ar: "AR1", pf: "PF2" });
+  assert.equal(p1.e, 0.75); assert.ok(p1.geotextile, "renvoi (2) : géotextile, 10 cm de moins");
+  assert.equal(ep({ type: "securitaire", pst: "PST1", ar: "AR1", pf: "PF2qs" }).e, 1.0);
+  assert.equal(ep({ type: "securitaire", pst: "PST3", ar: "AR1", pf: "PF2qs" }).e, 0.65);
+  assert.equal(ep({ type: "securitaire", pst: "PST3", ar: "AR2", pf: "PF2" }).e, 0.3);
+  assert.equal(ep({ type: "securitaire", pst: "PST6", ar: "AR2", pf: "PF2qs" }).e, 0.4);
+  assert.equal(ep({ type: "securitaire", pst: "PST3", ar: "AR1", pf: "PF3" }).applicable, false, "PF3 non garantie sans connaître les matériaux");
+  assert.equal(ep({ type: "securitaire", pst: "PST5", ar: "AR3", pf: "PF2qs" }).applicable, false, "« - » : AR3 dépasse déjà PF2qs");
+  assert.ok(ep({ type: "securitaire", pst: "PST5", ar: "AR3", pf: "PF3" }).reglage, "couche de réglage de 10 à 15 cm");
+  assert.ok(ep({ type: "securitaire", pst: "PST4", ar: "AR2", pf: "PF2" }).reglage);
+  // Tableau 21 : optimisation (matériaux connus).
+  assert.equal(ep({ type: "optimisation", pst: "PST1", ar: "AR1", pf: "PF2" }).e, 0.6);
+  assert.equal(ep({ type: "optimisation", pst: "PST2", ar: "AR1", pf: "PF3" }).e, 0.9);
+  assert.equal(ep({ type: "optimisation", pst: "PST3", ar: "AR1", pf: "PF2" }).e, 0.35);
+  assert.equal(ep({ type: "optimisation", pst: "PST4", ar: "AR2", pf: "PF2qs" }).e, 0.3);
+  assert.equal(ep({ type: "optimisation", pst: "PST6", ar: "AR2", pf: "PF3" }).e, 0.5);
+  assert.equal(ep({ type: "optimisation", pst: "PST1", ar: "AR1", pf: "PF3" }).applicable, false, "case vide : pas de PF3 sur PST1");
+  assert.equal(ep({ type: "optimisation", pst: "PST2", ar: "AR2", pf: "PF2" }).applicable, false, "couple absent des tableaux");
+  // Tableau 22 : sols F3 traités à la chaux seule.
+  const ch = ep({ type: "chaux", pst: "PST3", ar: "AR1", pf: "PF3" });
+  assert.equal(ch.e, 0.7); assert.ok(ch.deuxCouches);
+  assert.equal(ep({ type: "chaux", pst: "PST3", ar: "AR2", pf: "PF2qs" }).e, 0.45);
+  assert.equal(ep({ type: "chaux", pst: "PST3", ar: "AR2", pf: "PF2" }).applicable, false, "renvoi (1) : solution peu appropriée");
+  // Tableau 23 : traités aux liants hydrauliques, par classe mécanique.
+  assert.equal(ep({ type: "liant", pst: "PST3", ar: "AR1", classe: 3, pf: "PF3" }).e, 0.3);
+  assert.equal(ep({ type: "liant", pst: "PST3", ar: "AR1", classe: 3, pf: "PF2" }).e, 0.3, "case vide : l'épaisseur de la PF3");
+  assert.equal(ep({ type: "liant", pst: "PST3", ar: "AR1", classe: 4, pf: "PF2qs" }).e, 0.35);
+  assert.ok(ep({ type: "liant", pst: "PST3", ar: "AR1", classe: 4, pf: "PF4" }).deuxCouches);
+  assert.equal(ep({ type: "liant", pst: "PST3", ar: "AR1", classe: 5, pf: "PF4" }).e, 0.55);
+  assert.equal(ep({ type: "liant", pst: "PST4", ar: "AR2", classe: 3, pf: "PF4" }).e, 0.3);
+  assert.equal(ep({ type: "liant", pst: "PST4", ar: "AR2", classe: 5, pf: "PF2qs" }).e, 0.3);
+  assert.equal(ep({ type: "liant", pst: "PST4", ar: "AR2", classe: 4, pf: "PF2" }).applicable, false, "sur AR2, au moins PF2qs");
+  assert.equal(ep({ type: "liant", pst: "PST5", ar: "AR3", classe: 4, pf: "PF3" }).applicable, false, "tableaux 22 et 23 : AR1 et AR2");
+  assert.equal(ep({ type: "liant", pst: "PST1", ar: "AR1", classe: 4, pf: "PF3" }).applicable, false, "35 MPa à court terme requis");
+  assert.ok(ep({ type: "liant", pst: "PST2", ar: "AR1", classe: 4, pf: "PF3" }).notes.some((n) => /PST2/.test(n)), "déconseillée sur PST2");
+  // § 4.3.4 : plus mince que préconisé, la plateforme garde la classe de l'arase.
+  assert.equal(plateformeObtenue({ e: 0.3, preconise: 0.35, pf: "PF3", ar: "AR1" }), "PF1");
+  assert.equal(plateformeObtenue({ e: 0.35, preconise: 0.35, pf: "PF3", ar: "AR1" }), "PF3");
 });
 
 test("aptitude au traitement (NF P94-100)", async () => {

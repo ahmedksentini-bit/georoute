@@ -19,7 +19,7 @@ bancs d'essai, exerciseur, coque du bureau de calcul).
 | Ressource | Fichier | Rôle |
 |---|---|---|
 | Accueil | `index.html` | ressources, parties, chapitres, banques d'exercices (3 modes) |
-| Cours interactif | `cours.html` | 15 chapitres en quatre parties — les matériaux, les remblais, la PST et la couche de forme, le chantier ; des schémas explicatifs (synoptique de la démarche, symbole de classement, PST, classes de portance…) et 42 calculateurs à curseurs de calcul en direct : classer un sol aux deux éditions, lire un code d'utilisation, régler un atelier de compactage par la méthode Q/S, dépouiller des mesures de densité en place, un essai de plaque, une dynaplaque, chercher le cercle critique d'un talus (Bishop), trouver le cas de PST et l'épaisseur de couche de forme, doser la chaux vive, estimer la pénétration du gel, calculer des profils en travers, tracer l'épure de Lalanne, équilibrer un atelier pelle + tombereaux ; 18 bancs d'essai animés : tamisage, sédimentométrie, limites d'Atterberg (Casagrande), valeur de bleu, équivalent de sable, Proctor, IPI et CBR, Los Angeles, micro-Deval, fragmentabilité et dégradabilité, planche de compactage, gammadensimètre, pénétromètre dynamique, plaque, dynaplaque, traitement à la chaux, gonflement au gel et atelier de chantier ; sous les afficheurs de chaque banc, une loupe montre l'organe de l'essai au travail (la maille du tamis, la pâte qui se referme dans la coupelle, la dernière tache de bleu, la dame sur la couche, le boulet qui frappe les gravillons, la bille du compacteur qui serre les grains, les photons de la source au détecteur, le front de gel dans l'éprouvette…) |
+| Cours interactif | `cours.html` | 15 chapitres en quatre parties — les matériaux, les remblais, la PST et la couche de forme, le chantier ; 26 schémas : 9 schémas explicatifs (synoptique de la démarche, symbole de classement, PST, classes de portance…) et 17 schémas des appareils d'essai, imprimés aussi dans le polycopié (tamisage, sédimentométrie, Casagrande, bleu, équivalent de sable, Proctor, poinçonnement IPI et CBR, Los Angeles, micro-Deval, fragmentabilité et dégradabilité, gonflement au gel, classes de compacteurs, gammadensimètre, pénétromètre dynamique, plaque, plaque dynamique légère, épandage et malaxage) et 42 calculateurs à curseurs de calcul en direct : classer un sol aux deux éditions, lire un code d'utilisation, régler un atelier de compactage par la méthode Q/S, dépouiller des mesures de densité en place, un essai de plaque, une dynaplaque, chercher le cercle critique d'un talus (Bishop), trouver le cas de PST et l'épaisseur de couche de forme, doser la chaux vive, estimer la pénétration du gel, calculer des profils en travers, tracer l'épure de Lalanne, équilibrer un atelier pelle + tombereaux ; 18 bancs d'essai animés : tamisage, sédimentométrie, limites d'Atterberg (Casagrande), valeur de bleu, équivalent de sable, Proctor, IPI et CBR, Los Angeles, micro-Deval, fragmentabilité et dégradabilité, planche de compactage, gammadensimètre, pénétromètre dynamique, plaque, dynaplaque, traitement à la chaux, gonflement au gel et atelier de chantier ; sous les afficheurs de chaque banc, une loupe montre l'organe de l'essai au travail (la maille du tamis, la pâte qui se referme dans la coupelle, la dernière tache de bleu, la dame sur la couche, le boulet qui frappe les gravillons, la bille du compacteur qui serre les grains, les photons de la source au détecteur, le front de gel dans l'éprouvette…) |
 | Exerciseur | `exerciseur.html` | 112 modèles d'exercices à données tirées au hasard (7 ou 8 par chapitre), corrigés pas à pas par les mêmes solveurs que le cours, en mode apprentissage, entraînement ou examen |
 | Bureau de calcul | `bureau.html` | projet et tableau de bord, huit modules : classement d'un sol (GTR 2024 et 1992, conditions d'emploi en remblai et en couche de forme), matériau rocheux, compactage (tableaux de l'annexe 4, atelier, cadence), traitement à la chaux, PST et couche de forme (arase, épaisseur, plateforme), réception d'une plateforme (plaque, dynaplaque, densités), mouvement des terres (épure de Lalanne, transports), stabilité d'un talus — étapes numérotées, note de calcul avec cartouche |
 | Polycopié | `polycopie/terrassements-polycopie.pdf` | le cours complet, produit à partir de `cours.html` |
@@ -61,7 +61,7 @@ src/gtr/            solveurs purs et testés (aucun accès au DOM)
   utilisation.js      conditions d'utilisation en remblai et en couche de forme à partir d'un classement
   compactage.js       q4 et q3, méthode Q/S, ateliers, classes de compacteurs, densité par tranches
   pst.js              cas de PST (tableau 17 du fascicule 1), classes d'arase, réception de l'arase
-  couche-forme.js     Lmax, Dmax des matériaux traités, épaisseurs (tableaux du GTR 2000)
+  couche-forme.js     Lmax, Dmax des matériaux traités, épaisseurs (F1 tableaux 20 à 23) et classe de plateforme
   traitement.js       chaux et liants : quantités, baisse de teneur en eau, aptitude, zones mécaniques
   gel.js              classes SGn, SGp, SGt, pente p, pénétration du gel (Stefan)
   stabilite.js        talus infini, Bishop simplifié, recherche du cercle critique
@@ -76,6 +76,8 @@ src/exerciseur.js   tirages aléatoires reproductibles
 src/bureau.js       coque du bureau de calcul ; src/bureau/ : les huit modules et leurs notes de calcul
 src/figures.js      figures SVG (graphes, abaques) communes à tout le site
 src/schemas-cours.js, src/cours-schemas.js  schémas explicatifs du cours et leur pose
+src/schemas-identification.js, src/schemas-laboratoire.js, src/schemas-terrain.js
+                    schémas des appareils d'essai (boîte à outils commune : src/schemas-outils.js)
 src/curseurs.js     curseurs de calcul en direct (champs marqués data-curseur)
 src/bancs.js        chargeur des bancs d'essai ; src/bancs/ : moteur d'animation, loupe,
                     matériaux virtuels cohérents, un module par essai
@@ -102,10 +104,14 @@ exercice. Les tests vérifient que les banques correspondent aux modèles.
   les constantes `ANOMALIES`, page et case à l'appui.
 - Les matériaux virtuels des bancs d'essai ont des propriétés cohérentes entre
   elles : chacun doit se classer dans la classe qu'il annonce (test).
-- Là où le texte du GTR 2024 n'a pas pu être exploité (épaisseurs de couche de
-  forme, classes de compacteurs, frontières des zones de matériaux traités), le
-  site emploie les tableaux du **GTR 2000** et le dit à l'écran ; les frontières
-  des zones des matériaux traités sont numérisées à ±5 % sur la figure du guide.
+- Les épaisseurs de couche de forme (F1 tableaux 20 à 23), les classes de
+  plateforme (tableaux 18 et 19) et les classes de compacteurs (tableaux 24 et 25)
+  sont celles du GTR 2024. Seules les frontières des zones mécaniques des
+  matériaux traités restent numérisées à ±5 % sur la figure du **GTR 2000**, et
+  le site le dit à l'écran.
+- Le GTS (guide du traitement des sols, 2000) étaye la règle de la chaux vive et
+  l'aptitude au traitement en remblai ; les critères d'aptitude d'une couche de
+  forme traitée (NF P94-100) restent à vérifier sur sa partie C.
 - Un modèle d'enseignement (bicouche de la couche de forme, profondeur de gel
   par la formule de Stefan) montre une tendance : il ne remplace ni les
   tableaux du guide, ni une étude.
@@ -121,7 +127,7 @@ npm run serve       # site en local
 ```
 
 Après toute modification publiée, changer la version du service worker
-(`python tools/generer-sw.py georoute-v2`, par exemple) et la constante
+(`python tools/generer-sw.py georoute-v3`, par exemple) et la constante
 `VERSION_ATTENDUE` de `src/socle.js`, pour que les lecteurs déjà venus reçoivent
 la nouvelle version. Le polycopié se régénère après toute retouche du cours
 (`NAVIGATEUR=/chemin/vers/chrome` désigne un navigateur particulier).

@@ -1,8 +1,8 @@
 // Exercices du chapitre 11 : la couche de forme — plus gros éléments,
 // conditions d'utilisation (codes G W T S de l'annexe 3), classe mécanique
-// des matériaux traités, épaisseurs tabulées du GTR 2000 et modèle bicouche.
+// des matériaux traités, épaisseurs du GTR 2024 (tableaux 20 à 23) et modèle bicouche.
 import { fr, frd, nombre, choixMelange, donnee } from "./alea.js";
-import { lmaxCoucheForme, DMAX_TRAITE, epaisseur2000 } from "../gtr/couche-forme.js";
+import { lmaxCoucheForme, DMAX_TRAITE, epaisseurCoucheForme, EPAISSEURS_2024, TYPES_COUCHE_FORME } from "../gtr/couche-forme.js";
 import { zoneMecanique, classeMecanique, FRONTIERES_ZONES, rtFrontiere } from "../gtr/traitement.js";
 import { conditionsCoucheForme, RUBRIQUES_CDF, RUBRIQUES_REMBLAI } from "../gtr/utilisation.js";
 import { bicouche, epaisseurPour, CLASSES_PF, classePlateforme } from "../gtr/portance.js";
@@ -124,16 +124,35 @@ function lireSituation(r, m) {
   return `la situation ${symbole(m)} n'est pas décrite pour ce matériau → ${ISSUES.non}`;
 }
 
-/** Combinaisons des épaisseurs du GTR 2000 tabulées pour les deux arases. */
+/**
+ * Cas des tableaux 20 à 23 du GTR 2024 (F1 § 4.3.5) qui donnent une
+ * épaisseur, chacun avec une variante comparable : l'autre jeu de règles pour
+ * une couche non traitée (sécuritaires ou d'optimisation), l'autre arase pour
+ * une couche traitée. Les couches de réglage et les cases vides sont écartées.
+ */
+const PF_VISEES = ["PF2", "PF2qs", "PF3", "PF4"];
+const epaisseurNette = (c) => { const r = epaisseurCoucheForme(c); return r.applicable && !r.reglage && !/^case vide/.test(r.notes[0] ?? "") ? r : null; };
+function variante(c) {
+  const v = c.type === "securitaire" || c.type === "optimisation"
+    ? { ...c, type: c.type === "securitaire" ? "optimisation" : "securitaire" }
+    : { ...c, ar: c.ar === "AR1" ? "AR2" : "AR1" };
+  return epaisseurNette(v) ? v : null;
+}
 const CAS_EPAISSEUR = [
-  { type: "nonTraite", pf: "PF3", classe: null }, { type: "finChaux", pf: "PF3", classe: null }, { type: "finChauxCiment", pf: "PF3", classe: null },
-  ...[3, 4, 5].flatMap((classe) => ["PF3", "PF4"].map((pf) => ({ type: "grenuTraite", pf, classe }))),
-];
+  ...["securitaire", "optimisation"].flatMap((type) => Object.keys(EPAISSEURS_2024[type]).flatMap((cle) => {
+    const [pst, ar] = cle.split("/");
+    return PF_VISEES.map((pf) => ({ type, pst, ar, pf, classe: null }));
+  })),
+  ...["AR1", "AR2"].flatMap((ar) => [
+    ...PF_VISEES.map((pf) => ({ type: "chaux", pst: "PST3", ar, pf, classe: null })),
+    ...[3, 4, 5].flatMap((classe) => PF_VISEES.map((pf) => ({ type: "liant", pst: "PST3", ar, pf, classe }))),
+  ]),
+].filter((c) => epaisseurNette(c) && variante(c) && Math.abs(epaisseurNette(c).e - epaisseurNette(variante(c)).e) >= 0.05);
 const NOM_TYPE = {
-  nonTraite: () => "grave concassée non traitée, insensible à l'eau",
-  finChaux: () => "argile F3 traitée en place à la chaux seule",
-  finChauxCiment: () => "limon F1 traité en place à la chaux puis au ciment",
-  grenuTraite: (k) => `grave traitée au liant hydraulique, de classe mécanique ${k}`,
+  securitaire: () => "grave non traitée dont on ne connaît pas encore les performances",
+  optimisation: () => "grave non traitée connue par une planche d'essai",
+  chaux: () => "argile F3 traitée à la chaux seule",
+  liant: (k) => `sol traité au liant hydraulique, de classe mécanique ${k}`,
 };
 
 export default [
@@ -283,22 +302,27 @@ export default [
     },
   },
   {
-    id: "ch11-epaisseur", titre: "Épaisseur de couche de forme (tableaux du GTR 2000)", difficulte: 1,
+    id: "ch11-epaisseur", titre: "Épaisseur de couche de forme (tableaux du GTR 2024)", difficulte: 1,
     generer(a) {
-      const c = a.choix(CAS_EPAISSEUR), ar = a.choix(["AR1", "AR2"]), autre = ar === "AR1" ? "AR2" : "AR1";
+      const c = a.choix(CAS_EPAISSEUR), v = variante(c);
       const B = a.entre(8.5, 14, 0.5), Lkm = a.entre(0.6, 2.5, 0.1);
-      const r = epaisseur2000({ type: c.type, ar, pf: c.pf, classe: c.classe });
-      const r2 = epaisseur2000({ type: c.type, ar: autre, pf: c.pf, classe: c.classe });
+      const r = epaisseurCoucheForme(c), r2 = epaisseurCoucheForme(v);
+      const tab = TYPES_COUCHE_FORME[c.type].tableau, tab2 = TYPES_COUCHE_FORME[v.type].tableau;
       const V = r.e * B * Lkm * 1000, dV = Math.abs(r.e - r2.e) * B * Lkm * 1000;
+      const nonTraitee = c.type === "securitaire" || c.type === "optimisation";
+      const q3 = nonTraitee
+        ? (c.type === "securitaire" ? "Volume économisé si une planche d'essai permettait d'appliquer les règles d'optimisation ?" : "Volume supplémentaire si l'on ne connaissait pas les matériaux (règles sécuritaires) ?")
+        : (c.ar === "AR1" ? "Volume économisé si l'arase était classée AR2 (50 MPa à court terme) ?" : "Volume supplémentaire si l'arase n'était que AR1 (35 MPa à court terme) ?");
+      const morale = nonTraitee ? "Connaître ses matériaux se paie en essais et se rembourse en épaisseur." : "La portance de l'arase se paie en épaisseur de couche de forme.";
       return {
-        enonce: `Sur une section de ${frd(Lkm, 1)} km, la plateforme de terrassement mesure ${frd(B, 1)} m de large ; l'arase est de classe ${ar} (${MODULE_AR[ar]} MPa) et l'on vise une plateforme ${c.pf}. La couche de forme est en ${NOM_TYPE[c.type](c.classe)}. On prend les épaisseurs tabulées du GTR 2000 (fascicule I, tableaux XIII, XIV et XVI) comme référence : celles du GTR 2024 (F1 § 4.3.5), qui intègrent la classe PF2qs, se lisent dans le guide.`,
-        donnees: [donnee("Arase", `${ar} (${MODULE_AR[ar]} MPa)`), donnee("Plateforme visée", c.pf), donnee("Couche de forme", c.type === "grenuTraite" ? `grave traitée, classe ${c.classe}` : NOM_TYPE[c.type]()), donnee("Section", `${frd(Lkm, 1)} km × ${frd(B, 1)} m`)],
+        enonce: `Sur une section de ${frd(Lkm, 1)} km, la plateforme de terrassement mesure ${frd(B, 1)} m de large. La partie supérieure des terrassements est une ${c.pst}, l'arase de classe ${c.ar} (${MODULE_AR[c.ar]} MPa à long terme), et l'on vise une plateforme ${c.pf}. La couche de forme est en ${NOM_TYPE[c.type](c.classe)}. On applique les tableaux du GTR 2024 (fascicule 1, § 4.3.5).`,
+        donnees: [donnee("PST · arase", `${c.pst} · ${c.ar} (${MODULE_AR[c.ar]} MPa)`), donnee("Plateforme visée", c.pf), donnee("Couche de forme", NOM_TYPE[c.type](c.classe)), donnee("Section", `${frd(Lkm, 1)} km × ${frd(B, 1)} m`)],
         questions: [
-          nombre("Épaisseur de couche de forme selon le GTR 2000 ?", r.e, "m",
-            `Tableau du GTR 2000 pour ce matériau, de ${ar} à ${c.pf} : e = ${frd(r.e, 2)} m${r.notes.length ? ` (${r.notes.join(" ; ")})` : ""}.`, { abs: 0.005 }),
+          nombre("Épaisseur de couche de forme selon le GTR 2024 ?", r.e, "m",
+            `Tableau ${tab} (${TYPES_COUCHE_FORME[c.type].nom}), ${nonTraitee ? `colonne ${c.pst}/${c.ar}` : `arase ${c.ar}${c.classe ? `, classe mécanique ${c.classe}` : ""}`}, ligne ${c.pf} : e = ${frd(r.e, 2)} m${r.notes.length ? ` (${r.notes.join(" ; ")})` : ""}.`, { abs: 0.005 }),
           nombre("Volume de couche de forme compactée sur la section ?", V, "m³", `V = e × largeur × longueur = ${frd(r.e, 2)} × ${frd(B, 1)} × ${fr(Lkm * 1000, 4)} = ${fr(V, 4)} m³.`, { rel: 0.01 }),
-          nombre(ar === "AR1" ? "Volume économisé si un drainage garantissait une arase AR2 ?" : "Volume supplémentaire si l'arase n'était que AR1 ?", dV, "m³",
-            `Avec ${autre}, le même tableau donne ${frd(r2.e, 2)} m ; ΔV = ${frd(Math.abs(r.e - r2.e), 2)} × ${frd(B, 1)} × ${fr(Lkm * 1000, 4)} = ${fr(dV, 4)} m³. La portance de l'arase se paie en épaisseur de couche de forme.`, { rel: 0.01 }),
+          nombre(q3, dV, "m³",
+            `Le tableau ${tab2}${nonTraitee ? "" : `, avec une arase ${v.ar},`} donne ${frd(r2.e, 2)} m ; ΔV = ${frd(Math.abs(r.e - r2.e), 2)} × ${frd(B, 1)} × ${fr(Lkm * 1000, 4)} = ${fr(dV, 4)} m³. ${morale}`, { rel: 0.01 }),
         ],
       };
     },
@@ -335,29 +359,27 @@ export default [
     },
   },
   {
-    id: "ch11-bicouche-inverse", titre: "Épaisseur pour une plateforme : modèle bicouche et GTR 2000", difficulte: 3,
+    id: "ch11-bicouche-inverse", titre: "Épaisseur pour une plateforme : modèle bicouche et GTR 2024", difficulte: 3,
     generer(a) {
-      const t = a.choix([
-        { type: "nonTraite", nom: "grave concassée non traitée", E1: a.entre(350, 450, 50), classe: null },
-        { type: "finChaux", nom: "argile F3 traitée à la chaux seule", E1: a.entre(500, 700, 100), classe: null },
-        { type: "finChauxCiment", nom: "limon F1 traité à la chaux et au ciment", E1: a.entre(800, 1200, 100), classe: null },
-        { type: "grenuTraite", nom: "grave traitée au liant hydraulique", E1: a.entre(4000, 6000, 500), classe: a.choix([3, 4, 5]) },
-      ]);
-      const ar = a.choix(["AR1", "AR2"]), E2 = MODULE_AR[ar];
-      const pf = t.type === "grenuTraite" ? a.choix(["PF3", "PF4"]) : "PF3";
-      const Ev = CLASSES_PF.find((c) => c.classe === pf).min;
-      const h = epaisseurPour({ E1: t.E1, E2, Evise: Ev });
-      const r = bicouche({ E1: t.E1, E2, h });
-      const g = epaisseur2000({ type: t.type, ar, pf, classe: t.classe });
+      const d = tirer(a, (a) => {
+        const c = a.choix(CAS_EPAISSEUR.filter((x) => x.pf !== "PF2"));
+        const E1 = c.type === "liant" ? a.entre(4000, 6000, 500) : c.type === "chaux" ? a.entre(500, 700, 100) : a.entre(350, 450, 50);
+        const E2 = MODULE_AR[c.ar], Ev = CLASSES_PF.find((x) => x.classe === c.pf).min;
+        const h = epaisseurPour({ E1, E2, Evise: Ev });
+        return { c, E1, E2, Ev, h };
+      }, ({ h }) => Number.isFinite(h) && h > 0.05 && h < 2);
+      const { c, E1, E2, Ev, h } = d;
+      const r = bicouche({ E1, E2, h });
+      const g = epaisseurCoucheForme(c), tab = TYPES_COUCHE_FORME[c.type].tableau;
       const bonne = "celle des tableaux du guide : le modèle ignore la fatigue, le gel et le trafic de chantier";
       return {
-        enonce: `On vise une plateforme ${pf} (EV2 ≥ ${Ev} MPa) sur une arase ${ar} (E2 = ${E2} MPa), avec une couche de forme en ${t.nom}${t.classe ? ` de classe mécanique ${t.classe}` : ""}, de module E1 = ${fr(t.E1, 4)} MPa. Modèle bicouche du cours (plaque de rayon a = 0,30 m) : he = 0,9 h (E1/E2)^(1/3), f = 1/√(1 + (he/a)²), 1/Es = (1 − f)/E1 + f/E2.`,
-        donnees: [donnee("Plateforme visée", `${pf} (${Ev} MPa)`), donnee("Arase", `${ar} · ${E2} MPa`), donnee("E1", `${fr(t.E1, 4)} MPa`)],
+        enonce: `On vise une plateforme ${c.pf} (EV2 ≥ ${Ev} MPa) sur une ${c.pst} dont l'arase est ${c.ar} (E2 = ${E2} MPa), avec une couche de forme en ${NOM_TYPE[c.type](c.classe)}, de module E1 = ${fr(E1, 4)} MPa. Modèle bicouche du cours (plaque de rayon a = 0,30 m) : he = 0,9 h (E1/E2)^(1/3), f = 1/√(1 + (he/a)²), 1/Es = (1 − f)/E1 + f/E2.`,
+        donnees: [donnee("Plateforme visée", `${c.pf} (${Ev} MPa)`), donnee("PST · arase", `${c.pst} · ${c.ar} · ${E2} MPa`), donnee("E1", `${fr(E1, 4)} MPa`)],
         questions: [
-          nombre(`Valeur de f qui donne Es = ${Ev} MPa ?`, r.f, "", `f = (1/Es − 1/E1)/(1/E2 − 1/E1) = (1/${Ev} − 1/${fr(t.E1, 4)})/(1/${E2} − 1/${fr(t.E1, 4)}) = ${frd(r.f, 3)}.`, { rel: 0.02 }),
+          nombre(`Valeur de f qui donne Es = ${Ev} MPa ?`, r.f, "", `f = (1/Es − 1/E1)/(1/E2 − 1/E1) = (1/${Ev} − 1/${fr(E1, 4)})/(1/${E2} − 1/${fr(E1, 4)}) = ${frd(r.f, 3)}.`, { rel: 0.02 }),
           nombre("Épaisseur donnée par le modèle bicouche ?", h, "m",
-            `he = a √(1/f² − 1) = 0,30 × √(1/${frd(r.f, 3)}² − 1) = ${frd(r.he, 3)} m ; h = he / [0,9 (E1/E2)^(1/3)] = ${frd(r.he, 3)} / (0,9 × ${frd(Math.cbrt(t.E1 / E2), 3)}) = ${frd(h, 3)} m.`, { rel: 0.03 }),
-          nombre("Épaisseur tabulée par le GTR 2000 pour ce cas ?", g.e, "m", `GTR 2000, de ${ar} à ${pf} pour ce matériau : ${frd(g.e, 2)} m${g.notes.length ? ` (${g.notes.join(" ; ")})` : ""}. Le GTR 2024 (F1 § 4.3.5) a ses propres tableaux.`, { abs: 0.005 }),
+            `he = a √(1/f² − 1) = 0,30 × √(1/${frd(r.f, 3)}² − 1) = ${frd(r.he, 3)} m ; h = he / [0,9 (E1/E2)^(1/3)] = ${frd(r.he, 3)} / (0,9 × ${frd(Math.cbrt(E1 / E2), 3)}) = ${frd(h, 3)} m.`, { rel: 0.03 }),
+          nombre("Épaisseur préconisée par le GTR 2024 pour ce cas ?", g.e, "m", `Tableau ${tab} du fascicule 1 (${TYPES_COUCHE_FORME[c.type].nom}), ${c.pst}/${c.ar}${c.classe ? `, classe mécanique ${c.classe}` : ""}, ${c.pf} : ${frd(g.e, 2)} m${g.notes.length ? ` (${g.notes.join(" ; ")})` : ""}.`, { abs: 0.005 }),
           choixMelange(a, "Quelle épaisseur retenir pour le projet ?", [bonne, "celle du modèle, puisqu'elle est calculée", "la plus faible des deux, par économie", "la moyenne des deux"],
             `Le modèle donne ${frd(h, 2)} m, le tableau ${frd(g.e, 2)} m : le modèle n'est qu'un outil de compréhension. On retient ${bonne}. La vérification au gel (NF P98-086) peut encore l'augmenter.`),
         ],

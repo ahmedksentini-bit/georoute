@@ -4,7 +4,7 @@
 
 import { esc, f, fd, nombre, lignes, pastille, tableau, donnees, classe } from "./commun.js";
 import { casPST, MODULE_AR } from "../gtr/pst.js";
-import { epaisseur2000, lmaxCoucheForme, DMAX_TRAITE } from "../gtr/couche-forme.js";
+import { epaisseurCoucheForme, TYPES_COUCHE_FORME, PLATEFORME_DE_L_ARASE, lmaxCoucheForme, DMAX_TRAITE } from "../gtr/couche-forme.js";
 import { bicouche, epaisseurPour, CLASSES_PF, plaque, jugerK, dynaplaque, classeArase, classePlateforme } from "../gtr/portance.js";
 import { OBJECTIFS } from "../gtr/compactage.js";
 import { cercleCritique, penteInfinie } from "../gtr/stabilite.js";
@@ -14,7 +14,8 @@ import { coupeTalus } from "../dessins-gtr.js";
 
 // ───────────────────────────── PST et couche de forme ─────────────────────────────
 
-const NOMS_TYPES = { nonTraite: "granulaire non traitée", finChaux: "sol fin traité à la chaux seule", finChauxCiment: "sol fin traité chaux + ciment", grenuTraite: "matériau grenu traité aux liants hydrauliques" };
+const NOMS_TYPES = Object.fromEntries(Object.entries(TYPES_COUCHE_FORME).map(([k, t]) => [k, t.nom]));
+const TRAITEE = (type) => type === "chaux" || type === "liant";
 
 export function calculerPlateforme(v) {
   const pst = casPST({ sousClasse: v.sousClasse, etat: v.etat, traitement: v.traitement, eTraitee: nombre(v.eTraitee, 0), nappe: v.nappe, drainage: v.drainage === "oui", portanceCT: nombre(v.EV2arase) });
@@ -23,48 +24,48 @@ export function calculerPlateforme(v) {
   const arOk = pst.ar.includes(ar);
   const E2 = MODULE_AR[ar], pf = v.pf, cible = CLASSES_PF.find((c) => c.classe === pf)?.min;
   const type = v.type, cl = Number(v.classeMeca), E1 = nombre(v.E1);
-  const ep = ar === "AR0" ? { applicable: false, motif: "arase AR0 : pas de couche de forme sans reclassement de la PST" } : epaisseur2000({ type, ar, pf, classe: cl });
+  const ep = epaisseurCoucheForme({ type, pst: pst.pst, ar, pf, classe: cl });
   const hModele = E1 > 0 && E2 > 0 && cible ? epaisseurPour({ E1, E2, Evise: cible }) : NaN;
   const eCouche = nombre(v.eCouche), Lmax = nombre(v.Lmax);
-  const lmaxAdmis = type === "nonTraite" ? lmaxCoucheForme(eCouche) : DMAX_TRAITE.place;
+  const lmaxAdmis = TRAITEE(type) ? DMAX_TRAITE.place : lmaxCoucheForme(eCouche);
   const okLmax = Number.isFinite(Lmax) ? Lmax <= lmaxAdmis : null;
   const EV2 = nombre(v.EV2arase);
-  const okArase = Number.isFinite(EV2) ? EV2 >= E2 : null;
-  // Chaux seule en couche de forme : sols F3 seulement (le sol de la PST, traité en place).
-  const okType = !(type === "finChaux" && !/^F3/.test(v.sousClasse));
-  const verdict = arOk && ep.applicable && okLmax !== false && okArase !== false && pst.pst !== "PST0" && okType;
+  // Portance exigée sur l'arase : son seuil à long terme sous une couche non traitée ; 35 ou 50 MPa à
+  // court terme sous une couche traitée (F1 § 4.3.5.2, tableaux 22 et 23).
+  const seuilArase = TRAITEE(type) ? (ar === "AR1" ? 35 : 50) : E2;
+  const okArase = Number.isFinite(EV2) ? EV2 >= seuilArase : null;
+  const verdict = arOk && ep.applicable && okLmax !== false && okArase !== false && pst.pst !== "PST0";
   const pts = Array.from({ length: 51 }, (_, i) => { const h = i / 50; return [h, E2 > 0 && E1 > 0 ? bicouche({ E1, E2, h }).Es : NaN]; });
   const figure = E2 > 0 && E1 > 0 ? graphe({
     largeur: 620, hauteur: 290, xmin: 0, xmax: 1, ymin: 0, ymax: Math.min(400, Math.max(150, (cible ?? 100) * 1.4)), pasX: 0.1,
     xlabel: "épaisseur de couche de forme h (m)", ylabel: "module en surface Es (MPa)",
     series: [{ points: pts, couleur: COULEURS.bleu, epaisseur: 2.6, libelle: `bicouche ${f(E1, 4)} MPa sur ${ar} (${E2} MPa)` },
       ...(cible ? [{ points: [[0, cible], [1, cible]], couleur: COULEURS.gtr24, tirets: "5 4", epaisseur: 1.6, libelle: `seuil ${pf} : ${cible} MPa` }] : [])],
-    marques: ep.applicable ? [{ x: ep.e, y: bicouche({ E1, E2, h: ep.e }).Es, couleur: COULEURS.rouge, libelle: `GTR 2000 : ${fd(ep.e, 2)} m`, guides: true }] : [],
+    marques: ep.applicable ? [{ x: ep.e, y: bicouche({ E1, E2, h: ep.e }).Es, couleur: COULEURS.rouge, libelle: ep.reglage ? "couche de réglage" : `GTR 2024 : ${fd(ep.e, 2)} m`, guides: true }] : [],
   }) : "";
   const synthese = `
     <p class="final-result bureau-verdict ${verdict ? "ok" : "ko"}"><strong>${esc(pst.pst)}</strong> · arase ${classe(ar)} (${E2} MPa à long terme)${arOk ? "" : ` <span class="verdict ko">✕ ${esc(ar)} n'est pas admise pour cette PST (${pst.ar.join(" ou ")})</span>`}
-      → ${ep.applicable ? `couche de forme ${esc(NOMS_TYPES[type])} de <strong>${fd(ep.e, 2)} m</strong> pour ${classe(pf)}` : `<span class="verdict ko">${esc(ep.motif)}</span>`}
+      → ${ep.applicable ? `couche de forme ${esc(NOMS_TYPES[type])} : <strong>${ep.reglage ? "couche de réglage de 10 à 15 cm" : `${fd(ep.e, 2)} m`}</strong> pour ${classe(pf)}` : `<span class="verdict ko">${esc(ep.motif)}</span>`}
       <small>${esc(pst.motif)}.</small></p>
     ${tableau(["Contrôle", "Résultat"], [
-      ["Portance de l'arase mesurée à court terme", okArase === null ? "non renseignée" : `${pastille(okArase, `${fd(EV2, 0)} ≥ ${E2} MPa`, `${fd(EV2, 0)} < ${E2} MPa`)}`],
+      ["Portance de l'arase mesurée à court terme", okArase === null ? "non renseignée" : `${pastille(okArase, `${fd(EV2, 0)} ≥ ${seuilArase} MPa`, `${fd(EV2, 0)} < ${seuilArase} MPa`)}`],
       ["Plus gros éléments", okLmax === null ? "non renseignés" : `${pastille(okLmax, `${f(Lmax, 3)} ≤ ${f(lmaxAdmis, 3)} mm`, `${f(Lmax, 3)} > ${f(lmaxAdmis, 3)} mm`)}`],
       ["Modèle bicouche", Number.isFinite(hModele) ? `${pf} atteinte pour h ≈ ${fd(hModele, 2)} m` : "seuil non atteint avec ce module"],
-      ...(okType ? [] : [["Chaux seule en couche de forme", `<span class="verdict ko">✕ réservée aux sols F3</span>`]]),
     ])}`;
   const note = `
     <h3>1. Données</h3>
     ${donnees([["Matériau de la PST", `${esc(v.sousClasse)}, état ${esc(v.etat)}`], ["Nappe · drainage", `${v.nappe === "risque" ? "remontée possible" : "pas de remontée"} · ${v.drainage === "oui" ? "drainage et imperméabilisation de l'arase" : "sans dispositions"}`],
       ["Traitement de la PST", `${esc(v.traitement)}${v.traitement === "stabilisation" ? ` sur ${fd(nombre(v.eTraitee), 2)} m` : ""}`], ["Couche de forme", esc(NOMS_TYPES[type])],
-      ["Classe mécanique", type === "grenuTraite" ? String(cl) : ""], ["Plateforme visée", pf], ["Module de la couche (modèle)", `${f(E1, 4)} MPa`]])}
+      ["Classe mécanique", type === "liant" ? String(cl) : ""], ["Plateforme visée", pf], ["Module de la couche (modèle)", `${f(E1, 4)} MPa`]])}
     <h3>2. Cas de PST et arase (F1 § 4.3.3, tableau 17)</h3>
     <p><strong>${esc(pst.pst)}</strong>, arase ${pst.ar.join(" ou ")} : ${esc(pst.motif)}.${pst.avertissements.length ? ` ${pst.avertissements.map(esc).join(" ")}` : ""}</p>
     <h3>3. Épaisseur de couche de forme</h3>
-    <p>${ep.applicable ? `GTR 2000 (fascicule I § 3.4.2) : <strong>${fd(ep.e, 2)} m</strong> pour passer de ${ar} à ${pf}${ep.notes.length ? ` — ${ep.notes.map(esc).join(" ; ")}` : ""}.` : esc(ep.motif)}
-       Les épaisseurs du GTR 2024 (F1 § 4.3.5), qui intègrent la classe PF2qs, sont à vérifier dans le guide.</p>
+    <p>${ep.applicable ? `GTR 2024, tableau ${ep.tableau} (F1 § 4.3.5) : <strong>${ep.reglage ? "couche de réglage de 10 à 15 cm" : `${fd(ep.e, 2)} m`}</strong> pour viser ${pf} sur ${esc(pst.pst)}/${ar}${ep.notes.length ? ` — ${ep.notes.map(esc).join(" ; ")}` : ""}.` : esc(ep.motif)}
+       Plus mince que l'épaisseur préconisée, la couche ne compte pas : la plateforme garde la classe de l'arase, ${PLATEFORME_DE_L_ARASE[ar] ?? "—"} (F1 § 4.3.4).</p>
     <p class="formula">Modèle bicouche : h<sub>e</sub> = 0,9 h (E<sub>1</sub>/E<sub>2</sub>)<sup>1/3</sup> ; 1/E<sub>s</sub> = (1 − φ)/E<sub>1</sub> + φ/E<sub>2</sub>, φ = 1/√(1 + (h<sub>e</sub>/a)²)</p>
     <h3>4. Plus gros éléments</h3>
-    <p>${type === "nonTraite" ? `Couche non traitée : L<sub>max</sub> ≤ min(250 ; e/2) = ${f(lmaxAdmis, 3)} mm pour une couche élémentaire de ${fd(eCouche, 2)} m.` : `Matériau traité : D<sub>max</sub> ≤ 63 mm malaxé en centrale, 100 mm en place.`}</p>`;
-  return { figure, synthese, note, verdict, resume: `${pst.pst} · ${ar} → ${ep.applicable ? `${fd(ep.e, 2)} m` : "—"} · ${pf}` };
+    <p>${!TRAITEE(type) ? `Couche non traitée : L<sub>max</sub> ≤ min(250 ; e/2) = ${f(lmaxAdmis, 3)} mm pour une couche élémentaire de ${fd(eCouche, 2)} m.` : `Matériau traité : D<sub>max</sub> ≤ 63 mm malaxé en centrale, 100 mm en place.`}</p>`;
+  return { figure, synthese, note, verdict, resume: `${pst.pst} · ${ar} → ${ep.applicable ? (ep.reglage ? "réglage" : `${fd(ep.e, 2)} m`) : "—"} · ${pf}` };
 }
 
 // ───────────────────────────── Réception ─────────────────────────────

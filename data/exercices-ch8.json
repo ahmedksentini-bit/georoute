@@ -6,7 +6,7 @@
    "titre": "Q/S réalisé d'un poste",
    "difficulte": 1,
    "graine": 2344639653,
-   "enonce": "Remblai construit avec un limon ou une argile peu plastique à éléments de plus de 63 mm (VC1F2), énergie faible : le tableau de compactage (annexe 4, p. 85) donne Q/S = 0,105 m pour le V4 du chantier, de largeur 2,10 m. À la fin du poste, le comptage des camions donne 1 230 m³ mis en œuvre, et l'enregistreur du compacteur 6,3 km parcourus en compactage.",
+   "enonce": "Remblai construit avec un limon ou une argile peu plastique à éléments de plus de 63 mm (VC1F2), énergie faible : le tableau de compactage (annexe 4, p. 85) donne Q/S = 0,105 m pour le V4 du chantier, de largeur 2,10 m. À la fin du poste, le comptage des camions donne 1 230 m³ mis en œuvre, et l'enregistreur du compacteur 5,4 km parcourus en compactage.",
    "donnees": [
     {
      "label": "Q",
@@ -14,7 +14,7 @@
     },
     {
      "label": "Distance",
-     "valeur": "6,3 km"
+     "valeur": "5,4 km"
     },
     {
      "label": "L",
@@ -23,6 +23,10 @@
     {
      "label": "Q/S du tableau",
      "valeur": "0,105 m"
+    },
+    {
+     "label": "Énergie",
+     "valeur": "faible (code 3)"
     }
    ],
    "questions": [
@@ -30,36 +34,36 @@
      "texte": "Surface balayée S ?",
      "type": "nombre",
      "unite": "m²",
-     "reponse": 13230,
-     "explication": "S = distance × largeur = 1 000 × 6,3 × 2,10 = 13 230 m².",
+     "reponse": 11340,
+     "explication": "S = distance × largeur = 1 000 × 5,4 × 2,10 = 11 340 m².",
      "toleranceRel": 0.005
     },
     {
      "texte": "Q/S réalisé ?",
      "type": "nombre",
      "unite": "m",
-     "reponse": 0.0929705,
-     "explication": "Q/S = 1 230/13 230 = 0,093 m.",
+     "reponse": 0.108466,
+     "explication": "Q/S = 1 230/11 340 = 0,108 m, soit 103 % du tableau.",
      "toleranceRel": 0.01
     },
     {
      "texte": "Le poste est-il conforme ?",
      "type": "choix",
      "options": [
-      "non conforme : un Q/S réalisé plus petit que celui du tableau traduit un excès d'énergie",
-      "non conforme : le Q/S réalisé dépasse celui du tableau, l'énergie est insuffisante",
+      "non conforme : en énergie faible, un Q/S réalisé trop petit traduit un excès d'énergie qui matelasse le sol",
       "conforme : le Q/S réalisé ne dépasse pas celui du tableau",
-      "conforme : un Q/S réalisé plus grand que celui du tableau traduit plus de travail"
+      "conforme : en énergie faible, le Q/S réalisé reste à ± 20 % de celui du tableau",
+      "non conforme : le Q/S réalisé dépasse celui du tableau, l'énergie est insuffisante"
      ],
      "reponse": 2,
-     "explication": "0,093 m ≤ 0,105 m. Q/S est l'épaisseur de sol « traitée » par chaque passage : plus il est petit, plus le compacteur a travaillé ; le Q/S réalisé doit rester inférieur ou égal à celui du tableau."
+     "explication": "0,108 m pour 0,105 m au tableau (103 %). En énergie faible (code 3), le Q/S du tableau est une cible : le Q/S réalisé doit en rester à ± 20 % environ ; plus petit, il traduit un excès d'énergie qui matelasse un sol humide, plus grand une énergie insuffisante [F1 § 5.4.2]."
     },
     {
-     "texte": "Distance minimale de compactage pour ce volume ?",
+     "texte": "Distance de compactage qui donnerait exactement le Q/S du tableau ?",
      "type": "nombre",
      "unite": "km",
      "reponse": 5.57823,
-     "explication": "Il faut S ≥ Q/(Q/S)tableau = 1 230/0,105 = 11 714 m², soit 11 714/(1 000 × 2,10) = 5,58 km.",
+     "explication": "S = Q/(Q/S)tableau = 1 230/0,105 = 11 714 m², soit 11 714/(1 000 × 2,10) = 5,58 km. En énergie faible, la plage admise va de 4,65 à 6,97 km.",
      "toleranceRel": 0.01
     }
    ]

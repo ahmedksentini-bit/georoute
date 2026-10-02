@@ -82,7 +82,7 @@ const MODULES = [
   },
   {
     id: "plateforme", groupe: "Plateforme", icone: "▭", titre: "PST et couche de forme", sous: "arase, épaisseur, plateforme",
-    description: "Du mètre supérieur des terrassements à la plateforme : cas de PST et classe d'arase à long terme, épaisseur de couche de forme pour la plateforme visée (tableaux du GTR 2000 et modèle bicouche), plus gros éléments, portance mesurée de l'arase.",
+    description: "Du mètre supérieur des terrassements à la plateforme : cas de PST et classe d'arase à long terme, épaisseur de couche de forme pour la plateforme visée (tableaux 20 à 23 du GTR 2024 et modèle bicouche), plus gros éléments, portance mesurée de l'arase.",
     champs: [
       ["Partie supérieure des terrassements", [
         ["sousClasse", "Matériau de la PST", "choix", "F2", OPT_PST], ["etat", "État hydrique", "choix", "m", OPT_ETAT],
@@ -93,9 +93,9 @@ const MODULES = [
       ]],
       ["Couche de forme", [
         ["ar", "Classe d'arase retenue", "choix", "auto", [["auto", "la plus prudente du cas de PST"], ["AR1", "AR1"], ["AR2", "AR2"], ["AR3", "AR3"]]],
-        ["type", "Matériau", "choix", "grenuTraite", [["nonTraite", "granulaire non traité"], ["finChaux", "sol fin traité à la chaux seule"], ["finChauxCiment", "sol fin traité chaux + ciment"], ["grenuTraite", "grenu traité aux liants hydrauliques"]]],
+        ["type", "Matériau", "choix", "liant", [["securitaire", "non traité, matériaux non connus (tableau 20)"], ["optimisation", "non traité, matériaux connus (tableau 21)"], ["chaux", "sol F3 traité à la chaux seule (tableau 22)"], ["liant", "traité aux liants hydrauliques (tableau 23)"]]],
         ["classeMeca", "Classe mécanique (traité aux liants)", "choix", "4", [["3", "3"], ["4", "4"], ["5", "5"]]],
-        ["pf", "Plateforme visée", "choix", "PF3", [["PF2", "PF2"], ["PF3", "PF3"], ["PF4", "PF4"]]],
+        ["pf", "Plateforme visée", "choix", "PF3", [["PF2", "PF2"], ["PF2qs", "PF2qs"], ["PF3", "PF3"], ["PF4", "PF4"]]],
         ["E1", "Module de la couche (modèle bicouche)", "MPa", "5000"], ["eCouche", "Épaisseur d'une couche élémentaire", "m", "0.35"], ["Lmax", "Plus grande dimension du matériau", "mm", "60"],
       ]],
     ],

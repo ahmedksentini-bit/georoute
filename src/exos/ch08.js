@@ -3,7 +3,7 @@
 // par différence), pénétromètre dynamique léger, essai de plaque, dynaplaque
 // et seuils de portance du chantier.
 import { frd, fr, nombre, choixMelange, donnee } from "./alea.js";
-import { OBJECTIFS, ENERGIES, controleDensite, densiteTranche, controleAtelier } from "../gtr/compactage.js";
+import { OBJECTIFS, ENERGIES, controleDensite, densiteTranche, controleAtelier, jugerQSreel } from "../gtr/compactage.js";
 import { plaque, jugerK, dynaplaque } from "../gtr/portance.js";
 import { qdHollandais, enfoncementHollandais } from "../bancs/controle-dessin.js";
 import { graphe, COULEURS } from "../figures.js";
@@ -59,22 +59,34 @@ export default [
     generer(a) {
       const { t, code, comp, cell } = a.choix(CELLULES.filter((c) => famille(c.comp) !== "PQ"));
       const L = largeur(a, comp), Q = a.entre(600, 3000, 10);
-      const rapport = a.reel() < 0.5 ? a.entre(0.75, 0.96, 0.01) : a.entre(1.04, 1.3, 0.01);
+      const faible = String(code) === "3";
+      // Énergie faible : le Q/S réalisé doit rester à ± 20 % du tableau [F1 § 5.4.2] ; sinon, au plus le tableau.
+      const rapport = faible
+        ? a.choix([() => a.entre(0.88, 1.12, 0.01), () => a.entre(0.55, 0.72, 0.01), () => a.entre(1.28, 1.5, 0.01)])()
+        : a.reel() < 0.5 ? a.entre(0.75, 0.96, 0.01) : a.entre(1.04, 1.3, 0.01);
       const d = Math.max(1, +(Q / (1000 * L * cell.QS * rapport)).toFixed(1));
       const S = 1000 * d * L, QSr = Q / S;
-      const r = controleAtelier({ Q, engins: [{ S, QStableau: cell.QS }] });
-      const dMin = Q / (1000 * L * cell.QS);
+      const j = jugerQSreel({ QSreel: QSr, QStableau: cell.QS, code });
+      const dTab = Q / (1000 * L * cell.QS);
       const symbole = a.choix(t.classes);
-      const vrai = r.ok ? "conforme : le Q/S réalisé ne dépasse pas celui du tableau" : "non conforme : le Q/S réalisé dépasse celui du tableau, l'énergie est insuffisante";
+      const A = "conforme : le Q/S réalisé ne dépasse pas celui du tableau";
+      const B = "non conforme : le Q/S réalisé dépasse celui du tableau, l'énergie est insuffisante";
+      const C = "non conforme : en énergie faible, un Q/S réalisé trop petit traduit un excès d'énergie qui matelasse le sol";
+      const D = "conforme : en énergie faible, le Q/S réalisé reste à ± 20 % de celui du tableau";
+      const E = "conforme : un Q/S réalisé plus grand que celui du tableau traduit plus de travail";
+      const options = !faible ? (j.ok ? [A, B, E, C] : [B, A, E, C]) : j.sens === "ok" ? [D, A, B, C] : j.sens === "exces" ? [C, A, D, B] : [B, D, A, E];
+      const regle = faible
+        ? `En énergie faible (code 3), le Q/S du tableau est une cible : le Q/S réalisé doit en rester à ± 20 % environ ; plus petit, il traduit un excès d'énergie qui matelasse un sol humide, plus grand une énergie insuffisante [F1 § 5.4.2].`
+        : `En énergie ${ENERGIES[code]}, le Q/S du tableau est un maximum : plus le Q/S réalisé est petit, plus le compacteur a travaillé, et il peut l'être largement [F1 § 5.4.2].`;
       return {
         enonce: `Remblai construit avec ${materiau(symbole)} (${symbole}), énergie ${ENERGIES[code]} : le tableau de compactage (annexe 4, p. ${t.page}) donne Q/S = ${frd(cell.QS, 3)} m pour le ${comp} du chantier, de largeur ${frd(L, 2)} m. À la fin du poste, le comptage des camions donne ${fr(Q, 4)} m³ mis en œuvre, et l'enregistreur du compacteur ${frd(d, 1)} km parcourus en compactage.`,
-        donnees: [donnee("Q", `${fr(Q, 4)} m³`), donnee("Distance", `${frd(d, 1)} km`), donnee("L", `${frd(L, 2)} m`), donnee("Q/S du tableau", `${frd(cell.QS, 3)} m`)],
+        donnees: [donnee("Q", `${fr(Q, 4)} m³`), donnee("Distance", `${frd(d, 1)} km`), donnee("L", `${frd(L, 2)} m`), donnee("Q/S du tableau", `${frd(cell.QS, 3)} m`), donnee("Énergie", `${ENERGIES[code]} (code ${code})`)],
         questions: [
           nombre("Surface balayée S ?", S, "m²", `S = distance × largeur = 1 000 × ${frd(d, 1)} × ${frd(L, 2)} = ${fr(S, 5)} m².`, { rel: 0.005 }),
-          nombre("Q/S réalisé ?", QSr, "m", `Q/S = ${fr(Q, 4)}/${fr(S, 5)} = ${frd(QSr, 3)} m.`, { rel: 0.01 }),
-          choixMelange(a, "Le poste est-il conforme ?", [vrai, r.ok ? "non conforme : le Q/S réalisé dépasse celui du tableau, l'énergie est insuffisante" : "conforme : le Q/S réalisé ne dépasse pas celui du tableau", "conforme : un Q/S réalisé plus grand que celui du tableau traduit plus de travail", "non conforme : un Q/S réalisé plus petit que celui du tableau traduit un excès d'énergie"],
-            `${frd(QSr, 3)} m ${r.ok ? "≤" : ">"} ${frd(cell.QS, 3)} m. Q/S est l'épaisseur de sol « traitée » par chaque passage : plus il est petit, plus le compacteur a travaillé ; le Q/S réalisé doit rester inférieur ou égal à celui du tableau.`),
-          nombre("Distance minimale de compactage pour ce volume ?", dMin, "km", `Il faut S ≥ Q/(Q/S)tableau = ${fr(Q, 4)}/${frd(cell.QS, 3)} = ${fr(Q / cell.QS, 5)} m², soit ${fr(Q / cell.QS, 5)}/(1 000 × ${frd(L, 2)}) = ${frd(dMin, 2)} km${r.ok ? "" : ` : il manquait ${frd(dMin - d, 2)} km`}.`, { rel: 0.01 }),
+          nombre("Q/S réalisé ?", QSr, "m", `Q/S = ${fr(Q, 4)}/${fr(S, 5)} = ${frd(QSr, 3)} m, soit ${fr(100 * j.rapport, 3)} % du tableau.`, { rel: 0.01 }),
+          choixMelange(a, "Le poste est-il conforme ?", options, `${frd(QSr, 3)} m pour ${frd(cell.QS, 3)} m au tableau (${fr(100 * j.rapport, 3)} %). ${regle}`),
+          nombre("Distance de compactage qui donnerait exactement le Q/S du tableau ?", dTab, "km",
+            `S = Q/(Q/S)tableau = ${fr(Q, 4)}/${frd(cell.QS, 3)} = ${fr(Q / cell.QS, 5)} m², soit ${fr(Q / cell.QS, 5)}/(1 000 × ${frd(L, 2)}) = ${frd(dTab, 2)} km. ${faible ? `En énergie faible, la plage admise va de ${frd(dTab / 1.2, 2)} à ${frd(dTab / 0.8, 2)} km.` : `C'est la distance minimale : au-delà, l'énergie ne fait que croître.`}`, { rel: 0.01 }),
         ],
       };
     },
