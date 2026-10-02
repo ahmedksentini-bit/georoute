@@ -26,28 +26,16 @@ bancs d'essai, exerciseur, coque du bureau de calcul).
 
 ## Déploiement — Cloudflare Pages
 
-Le site vit pour l'instant dans le dossier `georoute/` du dépôt des fondations ;
-il se publie par un **second projet Pages** branché sur le même dépôt :
-
 | Réglage | Valeur |
 |---|---|
 | Framework preset | **None** |
 | Build command | *(vide)* |
-| Root directory (advanced) | **`georoute`** |
 | Build output directory | **`/`** |
-| Build watch paths | `georoute/*` |
 | Branche de production | `main` |
 
 Domaine personnalisé : **`georoute.ksr-infra.org`**. La zone `ksr-infra.org`
 étant chez Cloudflare, l'enregistrement DNS et le certificat du sous-domaine
 sont créés automatiquement lors de son ajout au projet Pages.
-
-Tant que le dossier reste dans ce dépôt, le projet des fondations (qui publie la
-racine) sert aussi une copie de `georoute/` sous `fond.ksr-infra.org/georoute/` ;
-exclure `georoute/*` de ses *build watch paths* lui évite seulement d'être
-reconstruit à chaque retouche. Déplacer le dossier dans un dépôt à lui (le
-contenu de `georoute/` en devient la racine, Root directory vide) sépare
-proprement les deux sites.
 
 Le dossier `docs/` (fascicules du GTR 2024, GTR 1992, GTS, normes et tableurs
 utilisés pour préparer le cours) est **exclu du dépôt** par `.gitignore` : ces
