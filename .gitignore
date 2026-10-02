@@ -3,8 +3,9 @@
 # sont soumis à droits et ne doivent pas être publiés avec le site.
 docs/
 
-# Fichiers de travail
+# Fichiers de travail (Playwright pour tools/verif s'installe sans être enregistré)
 node_modules/
+package-lock.json
 *.log
 .DS_Store
 Thumbs.db
