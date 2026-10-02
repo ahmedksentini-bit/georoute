@@ -84,7 +84,9 @@ src/bancs.js        chargeur des bancs d'essai ; src/bancs/ : moteur d'animation
 src/impression.js   mode impression du cours (polycopié)
 data/chapitres.json plan du cours ; data/exercices-chN.json banques figées
 tests/              contrôles numériques (exemples et tableaux du guide) et structurels
-tools/              génération des banques, du service worker et du polycopié
+tools/              génération des banques, du service worker et du polycopié ;
+                    tools/verif/ : vérifications dans le navigateur (Playwright)
+CLAUDE.md           consignes de travail : droits, commandes, comment ajouter, chantiers ouverts
 ```
 
 Les réponses des exercices ne sont **jamais écrites à la main** : chaque modèle
@@ -124,7 +126,13 @@ npm run exercices   # régénère data/exercices-chN.json à partir de src/exos
 npm run sw          # régénère la coquille du service worker (sw.js)
 npm run polycopie   # régénère le polycopié PDF à partir de cours.html
 npm run serve       # site en local
+node tools/verif/pages.mjs   # pages chargées dans Chromium : erreurs, sorties vides, NaN
 ```
+
+Les scripts de `tools/verif/` (pages, calculateurs, exercices, schémas,
+captures) demandent Playwright, qui n'est pas une dépendance du site :
+`npm i --no-save playwright && npx playwright install chromium`. Le fichier
+`CLAUDE.md` décrit leur usage et la façon de travailler sur le dépôt.
 
 Après toute modification publiée, changer la version du service worker
 (`python tools/generer-sw.py georoute-v3`, par exemple) et la constante
