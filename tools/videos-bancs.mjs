@@ -209,11 +209,16 @@ async function travaux(nav, base, nom) {
   if (autre && choix[autre] && !imposes.has(autre)) dims.unshift([autre, choix[autre]]);
   let combinaisons = [[]];
   for (const [cle, valeurs] of dims) combinaisons = combinaisons.flatMap((c) => valeurs.map(([v, l]) => [...c, [cle, v, l]]));
-  return combinaisons.map((c) => ({
-    nom,
-    reglages: [...IMPOSES, ...c.map(([k, v]) => [k, v])],
-    fichier: [nom, ...c.map(([, , l]) => slug(l))].join("-"),
-  }));
+  // Noms courts : du libellé d'un réglage varié, on ne garde que ce qui précède
+  // « : » (« fragmentabilité (IFR) ») ; le nom du banc n'est pas répété.
+  return combinaisons.map((c) => {
+    const parties = c.map(([k, , l]) => slug(k === autre ? l.split(" :")[0] : l));
+    return {
+      nom,
+      reglages: [...IMPOSES, ...c.map(([k, v]) => [k, v])],
+      fichier: (parties[0]?.startsWith(slug(nom)) ? parties : [nom, ...parties]).join("-"),
+    };
+  });
 }
 
 async function enregistrer(nav, base, { nom, reglages, fichier }) {
