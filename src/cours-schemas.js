@@ -2,7 +2,12 @@
 // légende, le schéma exporté sous ce nom. Les schémas qui suivent un calcul
 // restent dans le script de leur chapitre ; ceux-ci illustrent le texte.
 
-import * as SCHEMAS from "./schemas-cours.js";
+import * as cours from "./schemas-cours.js";
+import * as identification from "./schemas-identification.js";
+import * as laboratoire from "./schemas-laboratoire.js";
+import * as terrain from "./schemas-terrain.js";
+
+const SCHEMAS = { ...cours, ...identification, ...laboratoire, ...terrain };
 
 for (const f of document.querySelectorAll("figure[data-schema]")) {
   const dessin = SCHEMAS[f.dataset.schema];

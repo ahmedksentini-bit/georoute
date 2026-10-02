@@ -3,7 +3,7 @@
 // d'utilisation en couche de forme (annexe 3), épaisseur et modèle bicouche.
 import { el, num, f, fd, esc, verdict, brancher, garde } from "./ui.js";
 import { graphe, COULEURS } from "./figures.js";
-import { lmaxCoucheForme, epaisseur2000 } from "./gtr/couche-forme.js";
+import { lmaxCoucheForme, epaisseurCoucheForme, EPAISSEURS_2024, PLATEFORME_DE_L_ARASE } from "./gtr/couche-forme.js";
 import { zoneMecanique, classeMecanique, FRONTIERES_ZONES, rtFrontiere } from "./gtr/traitement.js";
 import { RUBRIQUES_CDF, METEOS, couvre } from "./gtr/utilisation.js";
 import { COUCHE_FORME } from "./gtr/tables-couche-forme.js";
@@ -68,16 +68,29 @@ const majCdf = garde("cfOut", () => {
 brancher(["cfClasse", "cfMeteo"], majCdf);
 
 // ── Épaisseur et modèle bicouche ──────────────────────────────────────────
+// Arases offertes par chaque cas de PST : les colonnes des tableaux 20 et 21
+// (GTR 2024, F1 § 4.3.5) ; une couche traitée n'est tabulée que sur AR1 et AR2.
+const arasesDe = (pst, type) => {
+  const toutes = Object.keys(EPAISSEURS_2024.securitaire).filter((k) => k.startsWith(`${pst}/`)).map((k) => k.split("/")[1]);
+  const t = type === "chaux" || type === "liant" ? toutes.filter((a) => a === "AR1" || a === "AR2") : toutes;
+  return t.length ? t : ["AR1"];
+};
+const NOMS_AR = { AR1: "AR1 (20 MPa)", AR2: "AR2 (50 MPa)", AR3: "AR3 (120 MPa)" };
+function majArases() {
+  const choix = arasesDe(el("epPst").value, el("epType").value), avant = el("epAr").value;
+  el("epAr").innerHTML = choix.map((a) => `<option value="${a}">${NOMS_AR[a]}</option>`).join("");
+  el("epAr").value = choix.includes(avant) ? avant : choix[0];
+}
 const majEpaisseur = garde("epOut", () => {
-  const type = el("epType").value, ar = el("epAr").value, pf = el("epPf").value, classe = Number(el("epClasse").value), E1 = num("epE1");
-  el("epClasse").closest(".field").hidden = type !== "grenuTraite";
-  const r = epaisseur2000({ type, ar, pf, classe });
+  const type = el("epType").value, pst = el("epPst").value, ar = el("epAr").value, pf = el("epPf").value, classe = Number(el("epClasse").value), E1 = num("epE1");
+  el("epClasse").closest(".field").hidden = type !== "liant";
+  const r = epaisseurCoucheForme({ type, pst, ar, pf, classe });
   const E2 = MODULE_AR[ar];
   const cible = CLASSES_PF.find((c) => c.classe === pf)?.min;
   const pts = Array.from({ length: 51 }, (_, i) => { const h = i / 50; return [h, bicouche({ E1, E2, h }).Es]; });
   const ymax = Math.max(cible * 1.4, 150);
   const marques = [];
-  if (r.applicable) marques.push({ x: r.e, y: bicouche({ E1, E2, h: r.e }).Es, couleur: COULEURS.rouge, libelle: `GTR 2000 : ${fd(r.e, 2)} m`, guides: true });
+  if (r.applicable) marques.push({ x: r.e, y: bicouche({ E1, E2, h: r.e }).Es, couleur: COULEURS.rouge, libelle: r.reglage ? "couche de réglage" : `GTR 2024 : ${fd(r.e, 2)} m`, guides: true });
   el("epFig").innerHTML = graphe({
     largeur: 620, hauteur: 300, xmin: 0, xmax: 1, ymin: 0, ymax: Math.min(ymax, 400), pasX: 0.1,
     xlabel: "épaisseur de la couche de forme h (m)", ylabel: "module en surface Es (MPa)",
@@ -88,11 +101,16 @@ const majEpaisseur = garde("epOut", () => {
     marques,
   });
   const hModele = epaisseurPour({ E1, E2, Evise: cible });
-  el("epOut").innerHTML = (r.applicable ? `GTR 2000 : <strong>${fd(r.e, 2)} m</strong> pour passer de ${ar} à ${pf}${r.notes.length ? ` <small>${r.notes.map(esc).join(" ; ")}.</small>` : ""}` : `<span class="verdict na">non tabulé</span> <small>${esc(r.motif)}</small>`)
+  el("epOut").innerHTML = (r.applicable
+    ? `Tableau ${r.tableau} du GTR 2024 : <strong>${r.reglage ? "couche de réglage de 10 à 15 cm" : `${fd(r.e, 2)} m`}</strong> pour viser ${pf} sur ${pst}/${ar}${r.notes.length ? ` <small>${r.notes.map(esc).join(" ; ")}.</small>` : ""}
+       <br>Plus mince que l'épaisseur préconisée, la couche ne compte pas : la plateforme garde la classe de l'arase, ${PLATEFORME_DE_L_ARASE[ar]}.`
+    : `<span class="verdict na">pas d'épaisseur tabulée</span> <small>${esc(r.motif)}</small>`)
     + `<br>Modèle bicouche : ${Number.isFinite(hModele) ? `E<sub>s</sub> atteint ${cible} MPa pour h ≈ <strong>${fd(hModele, 2)} m</strong>` : `E<sub>s</sub> n'atteint pas ${cible} MPa avec ce module de couche`} <small>Le modèle ignore la fatigue des matériaux traités, le gel et le trafic de chantier : il montre la tendance, les tableaux du guide font foi.</small>`;
 });
-// Module type de chaque couche de forme : granulaire 400 MPa, sol fin traité 600 à 1 000 MPa, grenu traité 5 000 MPa.
-const E1_TYPE = { nonTraite: 400, finChaux: 600, finChauxCiment: 1000, grenuTraite: 5000 };
+// Module type de chaque couche de forme : granulaire 300 à 400 MPa, sol F3 à la chaux 600 MPa, traité aux liants 5 000 MPa.
+const E1_TYPE = { securitaire: 300, optimisation: 400, chaux: 600, liant: 5000 };
 el("epType").addEventListener("change", () => { el("epE1").value = String(E1_TYPE[el("epType").value]); el("epE1").dispatchEvent(new Event("input")); });
+for (const id of ["epType", "epPst"]) el(id).addEventListener("change", majArases);
+majArases();
 el("epE1").value = String(E1_TYPE[el("epType").value]);
-brancher(["epType", "epAr", "epClasse", "epPf", "epE1"], majEpaisseur);
+brancher(["epType", "epPst", "epAr", "epClasse", "epPf", "epE1"], majEpaisseur);

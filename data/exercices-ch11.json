@@ -279,51 +279,51 @@
   },
   {
    "id": "ch11-epaisseur",
-   "titre": "Épaisseur de couche de forme (tableaux du GTR 2000)",
+   "titre": "Épaisseur de couche de forme (tableaux du GTR 2024)",
    "difficulte": 1,
    "graine": 1597551374,
-   "enonce": "Sur une section de 2,5 km, la plateforme de terrassement mesure 8,5 m de large ; l'arase est de classe AR2 (50 MPa) et l'on vise une plateforme PF3. La couche de forme est en grave traitée au liant hydraulique, de classe mécanique 3. On prend les épaisseurs tabulées du GTR 2000 (fascicule I, tableaux XIII, XIV et XVI) comme référence : celles du GTR 2024 (F1 § 4.3.5), qui intègrent la classe PF2qs, se lisent dans le guide.",
+   "enonce": "Sur une section de 0,7 km, la plateforme de terrassement mesure 14,0 m de large. La partie supérieure des terrassements est une PST2, l'arase de classe AR1 (20 MPa à long terme), et l'on vise une plateforme PF2qs. La couche de forme est en grave non traitée connue par une planche d'essai. On applique les tableaux du GTR 2024 (fascicule 1, § 4.3.5).",
    "donnees": [
     {
-     "label": "Arase",
-     "valeur": "AR2 (50 MPa)"
+     "label": "PST · arase",
+     "valeur": "PST2 · AR1 (20 MPa)"
     },
     {
      "label": "Plateforme visée",
-     "valeur": "PF3"
+     "valeur": "PF2qs"
     },
     {
      "label": "Couche de forme",
-     "valeur": "grave traitée, classe 3"
+     "valeur": "grave non traitée connue par une planche d'essai"
     },
     {
      "label": "Section",
-     "valeur": "2,5 km × 8,5 m"
+     "valeur": "0,7 km × 14,0 m"
     }
    ],
    "questions": [
     {
-     "texte": "Épaisseur de couche de forme selon le GTR 2000 ?",
+     "texte": "Épaisseur de couche de forme selon le GTR 2024 ?",
      "type": "nombre",
      "unite": "m",
-     "reponse": 0.25,
-     "explication": "Tableau du GTR 2000 pour ce matériau, de AR2 à PF3 : e = 0,25 m.",
+     "reponse": 0.65,
+     "explication": "Tableau 21 (non traitée, optimisation (matériaux connus)), colonne PST2/AR1, ligne PF2qs : e = 0,65 m (trafic de chantier plus lourd que l'approvisionnement de la couche de fondation : majorer de 10 à 20 cm).",
      "tolerance": 0.005
     },
     {
      "texte": "Volume de couche de forme compactée sur la section ?",
      "type": "nombre",
      "unite": "m³",
-     "reponse": 5312.5,
-     "explication": "V = e × largeur × longueur = 0,25 × 8,5 × 2 500 = 5 313 m³.",
+     "reponse": 6370,
+     "explication": "V = e × largeur × longueur = 0,65 × 14,0 × 700 = 6 370 m³.",
      "toleranceRel": 0.01
     },
     {
-     "texte": "Volume supplémentaire si l'arase n'était que AR1 ?",
+     "texte": "Volume supplémentaire si l'on ne connaissait pas les matériaux (règles sécuritaires) ?",
      "type": "nombre",
      "unite": "m³",
-     "reponse": 1062.5,
-     "explication": "Avec AR1, le même tableau donne 0,30 m ; ΔV = 0,05 × 8,5 × 2 500 = 1 062 m³. La portance de l'arase se paie en épaisseur de couche de forme.",
+     "reponse": 980,
+     "explication": "Le tableau 20 donne 0,75 m ; ΔV = 0,10 × 14,0 × 700 = 980 m³. Connaître ses matériaux se paie en essais et se rembourse en épaisseur.",
      "toleranceRel": 0.01
     }
    ]
@@ -390,47 +390,47 @@
   },
   {
    "id": "ch11-bicouche-inverse",
-   "titre": "Épaisseur pour une plateforme : modèle bicouche et GTR 2000",
+   "titre": "Épaisseur pour une plateforme : modèle bicouche et GTR 2024",
    "difficulte": 3,
    "graine": 831902066,
-   "enonce": "On vise une plateforme PF4 (EV2 ≥ 200 MPa) sur une arase AR2 (E2 = 50 MPa), avec une couche de forme en grave traitée au liant hydraulique de classe mécanique 5, de module E1 = 6 000 MPa. Modèle bicouche du cours (plaque de rayon a = 0,30 m) : he = 0,9 h (E1/E2)^(1/3), f = 1/√(1 + (he/a)²), 1/Es = (1 − f)/E1 + f/E2.",
+   "enonce": "On vise une plateforme PF2qs (EV2 ≥ 80 MPa) sur une PST5 dont l'arase est AR2 (E2 = 50 MPa), avec une couche de forme en grave non traitée dont on ne connaît pas encore les performances, de module E1 = 400 MPa. Modèle bicouche du cours (plaque de rayon a = 0,30 m) : he = 0,9 h (E1/E2)^(1/3), f = 1/√(1 + (he/a)²), 1/Es = (1 − f)/E1 + f/E2.",
    "donnees": [
     {
      "label": "Plateforme visée",
-     "valeur": "PF4 (200 MPa)"
+     "valeur": "PF2qs (80 MPa)"
     },
     {
-     "label": "Arase",
-     "valeur": "AR2 · 50 MPa"
+     "label": "PST · arase",
+     "valeur": "PST5 · AR2 · 50 MPa"
     },
     {
      "label": "E1",
-     "valeur": "6 000 MPa"
+     "valeur": "400 MPa"
     }
    ],
    "questions": [
     {
-     "texte": "Valeur de f qui donne Es = 200 MPa ?",
+     "texte": "Valeur de f qui donne Es = 80 MPa ?",
      "type": "nombre",
      "unite": "",
-     "reponse": 0.243697,
-     "explication": "f = (1/Es − 1/E1)/(1/E2 − 1/E1) = (1/200 − 1/6 000)/(1/50 − 1/6 000) = 0,244.",
+     "reponse": 0.571429,
+     "explication": "f = (1/Es − 1/E1)/(1/E2 − 1/E1) = (1/80 − 1/400)/(1/50 − 1/400) = 0,571.",
      "toleranceRel": 0.02
     },
     {
      "texte": "Épaisseur donnée par le modèle bicouche ?",
      "type": "nombre",
      "unite": "m",
-     "reponse": 0.268951,
-     "explication": "he = a √(1/f² − 1) = 0,30 × √(1/0,244² − 1) = 1,194 m ; h = he / [0,9 (E1/E2)^(1/3)] = 1,194 / (0,9 × 4,932) = 0,269 m.",
+     "reponse": 0.239357,
+     "explication": "he = a √(1/f² − 1) = 0,30 × √(1/0,571² − 1) = 0,431 m ; h = he / [0,9 (E1/E2)^(1/3)] = 0,431 / (0,9 × 2,000) = 0,239 m.",
      "toleranceRel": 0.03
     },
     {
-     "texte": "Épaisseur tabulée par le GTR 2000 pour ce cas ?",
+     "texte": "Épaisseur préconisée par le GTR 2024 pour ce cas ?",
      "type": "nombre",
      "unite": "m",
-     "reponse": 0.45,
-     "explication": "GTR 2000, de AR2 à PF4 pour ce matériau : 0,45 m (la compacité visée en fond de couche conduit en général à deux couches). Le GTR 2024 (F1 § 4.3.5) a ses propres tableaux.",
+     "reponse": 0.4,
+     "explication": "Tableau 20 du fascicule 1 (non traitée, règles sécuritaires (matériaux non connus)), PST5/AR2, PF2qs : 0,40 m (trafic de chantier plus lourd que l'approvisionnement de la couche de fondation : majorer de 10 à 20 cm).",
      "tolerance": 0.005
     },
     {
@@ -439,11 +439,11 @@
      "options": [
       "celle des tableaux du guide : le modèle ignore la fatigue, le gel et le trafic de chantier",
       "celle du modèle, puisqu'elle est calculée",
-      "la moyenne des deux",
-      "la plus faible des deux, par économie"
+      "la plus faible des deux, par économie",
+      "la moyenne des deux"
      ],
      "reponse": 0,
-     "explication": "Le modèle donne 0,27 m, le tableau 0,45 m : le modèle n'est qu'un outil de compréhension. On retient celle des tableaux du guide : le modèle ignore la fatigue, le gel et le trafic de chantier. La vérification au gel (NF P98-086) peut encore l'augmenter."
+     "explication": "Le modèle donne 0,24 m, le tableau 0,40 m : le modèle n'est qu'un outil de compréhension. On retient celle des tableaux du guide : le modèle ignore la fatigue, le gel et le trafic de chantier. La vérification au gel (NF P98-086) peut encore l'augmenter."
     }
    ]
   }

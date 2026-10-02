@@ -200,7 +200,7 @@ export function schemaSynoptique() {
 /** Anatomie de deux symboles du GTR 2024 : ce que dit chaque partie. */
 export function schemaSymbole() {
   const exemples = [
-    { parts: [["VC2", "#0f766e", "gros éléments :", "la fraction 0/63 mm gouverne"], ["G3", "#075985", "nature : grave,", "5 à 15 % de fines, étalée"], ["1", "#7c3aed", "comportement :", "LA ≤ 45 et MDE ≤ 45"], ["h", "#3b82f6", "état hydrique :", "humide"]] },
+    { parts: [["VC2", "#0f766e", "gros éléments :", "classement sur la 0/63 mm"], ["G3", "#075985", "nature : grave,", "5 à 15 % de fines, étalée"], ["1", "#7c3aed", "comportement :", "LA ≤ 45 et MDE ≤ 45"], ["h", "#3b82f6", "état hydrique :", "humide"]] },
     { parts: [["S2", "#075985", "nature : sable propre,", "uniforme (Cu < 6)"], ["1", "#7c3aed", "comportement :", "FS ≤ 60"], ["ins", "#15803d", "insensible à l'eau :", "pas d'état hydrique"]] },
   ];
   return svg({ largeur: 640, hauteur: 250, titre: "Lire un symbole du GTR 2024", contenu: () => {

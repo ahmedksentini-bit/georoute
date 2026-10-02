@@ -132,6 +132,25 @@ export function mixte(a, b) {
  * journée, surfaces balayées Si par chaque compacteur (m²), Q/S de tableau
  * de chacun. Le compactage est suffisant si Σ (Q/S)tableau,i / (Q/Si) ≥ 1.
  */
+/**
+ * Q/S réalisé face au Q/S du tableau [F1 § 5.4.2]. En énergie intense ou
+ * moyenne (codes 1 et 2), le Q/S du tableau est un maximum : le Q/S réalisé
+ * doit lui être inférieur ou égal, et il peut l'être largement. En énergie
+ * faible (code 3), il doit en rester proche, à ± 20 % environ à l'échelle de
+ * l'heure de travail : plus d'énergie matelasserait un sol humide et ferait
+ * chuter sa portance. Sans code (tableaux de couche de forme), maximum.
+ * sens : "ok", "insuffisant" (Q/S trop grand) ou "exces" (Q/S trop petit).
+ */
+export function jugerQSreel({ QSreel, QStableau, code = null }) {
+  const rapport = QSreel / QStableau;
+  if (String(code) === "3") {
+    const sens = rapport < 0.8 - 1e-9 ? "exces" : rapport > 1.2 + 1e-9 ? "insuffisant" : "ok";
+    return { ok: sens === "ok", rapport, sens, regle: "proche du Q/S du tableau, à ± 20 % (énergie faible)" };
+  }
+  const ok = rapport <= 1 + 1e-9;
+  return { ok, rapport, sens: ok ? "ok" : "insuffisant", regle: "au plus le Q/S du tableau" };
+}
+
 export function controleAtelier({ Q, engins }) {
   const termes = engins.map(({ S, QStableau }) => ({ S, QStableau, QSreel: Q / S, part: QStableau / (Q / S) }));
   const somme = termes.reduce((s, t) => s + t.part, 0);
