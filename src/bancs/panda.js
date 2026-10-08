@@ -266,14 +266,16 @@ export function monter(banc) {
         ...(e.zones?.liste ?? []).map((z) => ({ x0: 0, x1: e.vMax, y0: z.z0, y1: z.z1, couleur: ROUGE, opacite: 0.16, libelle: "anomalie", position: "droite" })),
       ],
     });
-    zc.innerHTML = e.coups.length ? graphe({
+    // Avant le premier coup, les axes seuls : cachés sur téléphone (.a-venir), visibles sur PC.
+    zc.classList.toggle("a-venir", !e.coups.length);
+    zc.innerHTML = graphe({
       largeur: 560, hauteur: 200, xmin: 0, xmax: Math.max(10, e.coups.length), ymin: 0, ymax: Math.ceil(Math.max(20, ...e.coups.map((k) => k.E), ...e.coups.map((k) => k.e)) / 10) * 10,
       xlabel: "numéro du coup", ylabel: "J ou mm",
       series: [
         { points: e.coups.map((k) => [k.n, k.E]), couleur: COULEURS.gtr92, epaisseur: 1.4, marqueurs: true, rayon: 2, libelle: "énergie mesurée E (J)" },
         { points: e.coups.map((k) => [k.n, k.e]), couleur: COULEURS.violet, epaisseur: 1.4, marqueurs: true, rayon: 2, libelle: "enfoncement e (mm)" },
       ],
-    }) : "";
+    });
   }
 
   function bilan() {

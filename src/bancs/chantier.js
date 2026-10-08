@@ -366,21 +366,26 @@ export function monter(banc) {
         { points: [[0, 0], [60, Qf]], couleur: COULEURS.gtr92, tirets: "3 3", epaisseur: 1.8, libelle: `${R.n} tombereau${R.n > 1 ? "x" : ""} jamais en file : ${f(Qf, 3)} m³/h de travail` },
       ],
     });
-    if (!e.fini) { zf.innerHTML = ""; return; }
-    // Rendement selon la flotte : solveur et simulations d'une heure, de 1 à 8 tombereaux.
-    if (!e.parN) e.parN = Array.from({ length: 8 }, (_, j) => { const a = creerAtelier(R, j + 1); a.avancerJusqua(DUREE); return [j + 1, a.rendement()]; });
+    // Rendement selon la flotte : solveur et simulations d'une heure, de 1 à 8 tombereaux. Avant la
+    // fin de l'heure, les axes seuls, dessinés une fois : cachés sur téléphone (.a-venir), visibles
+    // sur PC, où toutes les courbes tiennent à côté de la scène.
+    const avenir = !e.fini;
+    if (avenir && zf.classList.contains("a-venir")) return;
+    zf.classList.toggle("a-venir", avenir);
+    if (!avenir && !e.parN) e.parN = Array.from({ length: 8 }, (_, j) => { const a = creerAtelier(R, j + 1); a.avancerJusqua(DUREE); return [j + 1, a.rendement()]; });
     const theo = Array.from({ length: 8 }, (_, j) => [j + 1, solveur(R, j + 1).Q]), ns = e.A.nSature;
-    const Qmax = Math.max(...theo.map((x) => x[1]), ...e.parN.map((x) => x[1]));
+    const Qmax = Math.max(...theo.map((x) => x[1]), ...(e.parN ?? []).map((x) => x[1]));
     zf.innerHTML = graphe({
       largeur: 560, hauteur: 250, xmin: 0.5, xmax: 8.5, ymin: 0, ymax: Qmax * 1.2, pasX: 1, xlabel: "nombre de tombereaux", ylabel: "rendement (m³ en place / h)",
       series: [
-        { points: theo, couleur: COULEURS.gtr24, epaisseur: 2.2, libelle: "solveur : la plus faible de la pelle et de la flotte" },
-        { points: e.parN, couleur: COULEURS.encre, nuage: true, rayon: 4.5, libelle: "simulation d'une heure (E = 0,83 compris)" },
+        { points: avenir ? [] : theo, couleur: COULEURS.gtr24, epaisseur: 2.2, libelle: "solveur : la plus faible de la pelle et de la flotte" },
+        { points: e.parN ?? [], couleur: COULEURS.encre, nuage: true, rayon: 4.5, libelle: "simulation d'une heure (E = 0,83 compris)" },
       ],
-      marques: [
+      marques: avenir ? [] : [
         ...(ns <= 8 ? [{ x: ns, y: solveur(R, ns).Q, couleur: COULEURS.effort, libelle: `optimum : ${ns} tombereaux` }] : []),
         ...(R.n !== ns ? [{ x: R.n, y: e.parN[R.n - 1][1], couleur: COULEURS.bleu, rayon: 4, libelle: "atelier essayé" }] : []),
       ],
+      textes: avenir ? [{ x: 4.5, y: Qmax * 0.6, texte: "se trace à la fin de l'heure simulée" }] : [],
     });
   }
 

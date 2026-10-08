@@ -351,8 +351,10 @@ export function monter(banc) {
         ...legendeMode("ipi", COULEURS.bleu), ...legendeMode("cbr", COULEURS.violet), ...legendeMode("immersion", COULEURS.effort),
       ],
     }) + (ess.length ? "" : '<p class="method-note">Les essais terminés sur ce sol se placent ici : refaites-en à d\'autres teneurs en eau pour tracer la courbe IPI – w ; les bandes colorées sont les états hydriques du GTR 2024 lus sur l\'IPI.</p>');
-    // Gonflement pendant l'immersion.
-    zG.innerHTML = e.mode === "immersion" && e.releves.length ? graphe({
+    // Gonflement pendant l'immersion (CBR immergé seulement). Avant le premier relevé, les axes
+    // seuls : cachés sur téléphone (.a-venir), visibles sur PC.
+    zG.classList.toggle("a-venir", e.mode === "immersion" && !e.releves.length);
+    zG.innerHTML = e.mode === "immersion" ? graphe({
       largeur: 560, hauteur: 200, xmin: 0, xmax: 96, ymin: 0, ymax: Math.max(0.1, gonflement({ dh: e.dhFinal }) * 1.25), pasX: 12,
       xlabel: "durée d'immersion (h)", ylabel: "gonflement (%)",
       series: [{ points: e.releves.map(([th, dh]) => [th, gonflement({ dh, h0: 120 })]), couleur: COULEURS.bleu, epaisseur: 2, marqueurs: true, libelle: "gonflement linéaire Δh/h0" }],
