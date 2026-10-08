@@ -145,6 +145,10 @@ async function preparer(nav, base, nom, reglages, classes = [], variables = {}) 
   if (!trouve) throw new Error(`aucun banc « ${nom} » dans cours.html`);
   // Le module du banc se charge à la demande : le réseau ne dépend pas de l'horloge.
   await page.locator(".banc.projection .banc-corps").waitFor();
+  // Sur grand écran à la souris, src/bancs.js pose sur le banc ouvert la mise en page « PC » du
+  // cours (classe .banc-ouvert, dans la même tâche que la charpente .banc-corps). La vidéo a la
+  // sienne, la projection 16:9 : on la retire, et les courbes « à venir » restent cachées.
+  await page.evaluate(() => document.querySelector(".banc.projection").classList.remove("banc-ouvert"));
   await page.clock.runFor(500);
   for (const [cle, valeur] of reglages) {
     const ok = await page.evaluate(([cle, valeur]) => {

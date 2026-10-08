@@ -267,7 +267,8 @@ a.brand strong,a.brand small{text-decoration:none}
 .tableau-bord td button{padding:6px 10px;font-size:12.5px}
 @media print{.etapes,.etude,.envoi-sondage{display:none!important}.cartouche th{background:#eee}}
 
-/* Bancs d'essai : essais en place et de laboratoire animés, dans le cours. */
+/* Bancs d'essai : essais en place et de laboratoire animés, dans le cours.
+   Sur PC, le banc ouvert prend la largeur de la page : bloc .banc-ouvert en fin de fichier. */
 .banc{margin:20px 0;padding:14px 16px;border:1px solid #bae6fd;border-radius:16px;background:linear-gradient(180deg,#f0f9ff,#fff 60%)}
 .banc-tete{display:flex;gap:12px;align-items:flex-start}
 .banc-marque{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#0369a1;color:#fff;font-weight:900;flex:none}
@@ -341,3 +342,47 @@ a.brand strong,a.brand small{text-decoration:none}
 .code-gtr>span.actif{background:#ccfbf1;color:#115e59}
 .code-gtr>span.actif>b{color:#0f766e}
 .banc-corps>*{min-width:0}
+
+/* ── Bancs d'essai sur PC : le banc ouvert prend la largeur de la page ─────────────
+   Grand écran et souris seulement : un téléphone ou une tablette tactile garde la colonne
+   (commandes, scène, lectures, puis les courbes empilées). src/bancs.js donne au banc
+   ouvert la classe .banc-ouvert et la place de sa colonne (--banc-gauche, --banc-page) :
+   il sort de la colonne de texte, passe devant le sommaire et se centre dans la page.
+   La scène et ses lectures tiennent la colonne de gauche ; à droite, toutes les courbes,
+   en plusieurs colonnes, visibles dès l'ouverture, même vides. Même mise en page que les
+   bancs du cours de chaussées. */
+.banc-paire{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}
+.banc-courbes .a-venir{display:none}
+@media screen and (min-width:1100px) and (hover:hover) and (pointer:fine){
+  .banc.banc-ouvert{--banc-largeur:min(calc(var(--banc-page,100vw) - 32px),1880px);position:relative;z-index:3;width:var(--banc-largeur);margin-left:calc((var(--banc-page,100vw) - var(--banc-largeur)) / 2 - var(--banc-gauche,0px));box-shadow:0 18px 48px #0c4a6e2e}
+  .banc-ouvert .banc-tete{max-width:1100px}
+  .banc-ouvert .banc-corps{--banc-vue:max(500px,38%);--banc-n:2;grid-template-columns:minmax(0,var(--banc-vue)) minmax(0,1fr);grid-template-rows:auto auto 1fr auto;grid-template-areas:"commandes commandes" "scene courbes" "cote courbes" "bilan bilan";gap:12px 14px;align-items:start}
+  .banc-ouvert .banc-commandes{grid-area:commandes;display:flex;flex-wrap:wrap;align-items:flex-end;gap:8px 14px}
+  .banc-ouvert .banc-commandes>.data-grid{flex:1 1 440px;min-width:0;margin-top:0;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .banc-ouvert .banc-marche,.banc-ouvert .banc-etapes{margin-top:0}
+  .banc-ouvert [data-action="marche"]{min-width:8.8em}
+  .banc-ouvert .banc-vue{display:contents}
+  .banc-ouvert .banc-scene{grid-area:scene}
+  .banc-ouvert .banc-cote{grid-area:cote;display:flex;gap:10px;align-items:flex-start}
+  .banc-ouvert .banc-lectures{flex:1 1 0;min-width:0;grid-template-columns:repeat(auto-fill,minmax(125px,1fr))}
+  .banc-ouvert .banc-lectures .banc-etat{grid-column:1/-1}
+  .banc-ouvert .banc-loupe{flex:0 0 176px}
+  .banc-ouvert .banc-courbes{grid-area:courbes;grid-template-columns:repeat(var(--banc-n),minmax(0,1fr));align-items:start}
+  .banc-ouvert .banc-bilan{grid-area:bilan}
+  .banc-ouvert .banc-paire{display:contents}
+  /* Une courbe qui ne se trace qu'au fil de l'essai : ses axes sont là dès l'ouverture. */
+  .banc-ouvert .banc-courbes .a-venir{display:block}
+  /* Tableau de lectures à côté de sa courbe : resserré, pour tenir dans la hauteur de l'écran. */
+  .banc-ouvert .banc-courbes table.resultats{margin-top:0;font-size:13px}
+  .banc-ouvert .banc-courbes table.resultats th{padding:4px 6px;font-size:11px}
+  .banc-ouvert .banc-courbes table.resultats td{padding:4px 6px}
+  /* Une seule courbe (Proctor, plaque, Los Angeles, micro-Deval, fragmentabilité) : la scène, large,
+     tient deux rangées ; la courbe et, dessous, les lectures et la loupe à côté. */
+  .banc-ouvert:is([data-banc="proctor"],[data-banc="plaque"],[data-banc="losangeles"],[data-banc="microdeval"],[data-banc="fragmentabilite"]) .banc-corps{--banc-vue:55%;--banc-n:1;grid-template-areas:"commandes commandes" "scene courbes" "scene cote" "bilan bilan"}
+}
+@media screen and (min-width:1100px) and (max-width:1239px) and (hover:hover) and (pointer:fine){
+  /* Petit écran de PC : les courbes l'une sous l'autre, pour qu'elles restent lisibles ; les deux
+     signaux de la dynaplaque restent côte à côte. */
+  .banc-ouvert .banc-corps{--banc-n:1}
+  .banc-ouvert .banc-paire{display:grid}
+}

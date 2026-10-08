@@ -61,7 +61,7 @@ export function monter(banc) {
     e = { pf, pas, seuil, points, i: 0, k: 0, phase: "pose", minuteur: DUREES.pose, t: 0, xApp: points[0].x, xDepart: points[0].x,
       chutes: [], dernier: null, precedent: null, mesures: [], fini: false };
     c.scene.innerHTML = fond();
-    c.courbes.innerHTML = '<div class="dyn-signal" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px"></div><div class="dyn-profil"></div>';
+    c.courbes.innerHTML = '<div class="dyn-signal banc-paire"></div><div class="dyn-profil"></div>';
     c.bilan.innerHTML = "";
     dessiner(); dessinerLent();
   };
